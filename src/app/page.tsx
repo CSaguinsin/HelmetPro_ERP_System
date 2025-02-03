@@ -14,11 +14,11 @@ export default function LoginPage() {
         <div className="mx-auto w-full max-w-sm sm:max-w-md lg:max-w-lg">
           <div className="flex justify-center">
             <Image 
-              src="/placeholder.svg" 
+              src="/helmetpro/logo.jpeg" 
               alt="Logo" 
               width={64} 
               height={64} 
-              className="h-16 w-auto" 
+              className="h-[5rem] w-auto" 
             />
           </div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900 lg:text-left">
