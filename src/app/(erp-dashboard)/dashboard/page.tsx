@@ -11,6 +11,10 @@ import OperatingStatusCard from "../../components/OperatingStatusCard"
 import DeviceEndateCard from "../../components/DeviceEndateCard"
 import RecentSalesCard from "../../components/RecentSalesCard"
 import { Navbar } from "../../components/Navbar"
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabase'
+import { Loader } from "lucide-react" 
 
 import Image from "next/image"
 
@@ -116,6 +120,27 @@ function Sidebar() {
 
 export default function DashboardPage() {
   const userName = "John Doe" // Replace this with the actual user name, possibly from a context or prop
+  const router = useRouter()
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (!user) {
+        router.push('/')
+      } else {
+        setLoading(false)
+      }
+    }
+
+    checkAuth()
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAuth()
+    })
+
+    return () => subscription?.unsubscribe()
+  }, [router])
 
   return (
     <div className="flex flex-col h-screen overflow-hidden">

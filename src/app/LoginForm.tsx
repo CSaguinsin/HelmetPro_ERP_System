@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Eye, EyeOff, Loader } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,6 +54,19 @@ export function LoginForm() {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession()
+
+      // ✅ Only redirect if session is valid
+      if (session?.user) {
+        router.push('/dashboard')
+      }
+    }
+
+    checkSession()
+  }, [router])
 
   return (
     <div className="mt-8">
