@@ -28,10 +28,11 @@ const menuItems = [
     title: "Basic Configuration",
     icon: Settings,
     subItems: [
-      { title: "Set Site Info", href: "/settings/general" },
-      { title: "Device Lists", href: "/settings/users" },
-      { title: "Commodity Category Setting", href: "/settings/permissions" },
-      { title: "Set Material Info", href: "/settings/permissions" },
+      { title: "Set Site Info", href: "/dashboard/set-site-info" },
+      { title: "Device Lists", href: "/dashboard/device-lists" },
+      { title: "Commodity Category Setting", href: "/dashboard/commodity-category-settings" },
+      { title: "Set Material Info", href: "/dashboard/set-material-info" },
+      { title: "Add or Edit Machine Images", href: "/dashboard/machine-images" },
     ],
   },
   {
