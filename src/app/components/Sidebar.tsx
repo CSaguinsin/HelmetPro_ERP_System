@@ -1,32 +1,37 @@
 "use client"
+
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Settings, ShoppingCart, ChevronDown, Layers } from "lucide-react"
+import { LayoutDashboard, Settings, ShoppingCart, ChevronDown, Layers, Sidebar } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import Image from "next/image"
+
 
 const menuItems = [
   {
-    title: "Dashboard",
+    title: "Home",
     icon: LayoutDashboard,
-    href: "/",
+    href: "/dashboard",
   },
   {
     title: "Basic Configuration",
     icon: Settings,
     subItems: [
-      { title: "General Settings", href: "/settings/general" },
-      { title: "User Management", href: "/settings/users" },
-      { title: "Permissions", href: "/settings/permissions" },
+      { title: "Set Site Info", href: "/dashboard/set-site-info" },
+      { title: "Device Lists", href: "/dashboard/device-lists" },
+      { title: "Commodity Category Setting", href: "/dashboard/commodity-category-settings" },
+      { title: "Set Material Info", href: "/dashboard/set-material-info" },
+      { title: "Add or Edit Machine Images", href: "/dashboard/machine-images" },
     ],
   },
   {
     title: "Sales Management",
     icon: ShoppingCart,
     subItems: [
-      { title: "Orders", href: "/sales/orders" },
-      { title: "Customers", href: "/sales/customers" },
+      { title: "Online Order Inquiry", href: "/sales/orders" },
+      { title: "Commodity Distribution Management", href: "/sales/customers" },
       { title: "Products", href: "/sales/products" },
     ],
   },
@@ -34,21 +39,27 @@ const menuItems = [
     title: "System Management",
     icon: Layers,
     subItems: [
-      { title: "Logs", href: "/system/logs" },
-      { title: "Backups", href: "/system/backups" },
-      { title: "Updates", href: "/system/updates" },
+      { title: "Set User Rights", href: "/system/logs" }
     ],
   },
 ]
 
-export function Sidebar() {
+export default function SidebarComponent() {
   const pathname = usePathname()
 
   return (
     <div className="pb-12 min-h-screen">
       <div className="space-y-4 py-4">
         <div className="px-3 py-2">
-          <h2 className="mb-2 px-4 text-lg font-semibold tracking-tight">Management System</h2>
+        <div className="flex justify-center pb-10">
+            <Image 
+              src="/helmetpro/logo.jpeg" 
+              alt="Logo" 
+              width={64} 
+              height={64} 
+              className="h-[5rem] w-auto" 
+            />
+          </div>
           <div className="space-y-1">
             {menuItems.map((item, index) =>
               item.subItems ? (
@@ -98,4 +109,3 @@ export function Sidebar() {
     </div>
   )
 }
-
