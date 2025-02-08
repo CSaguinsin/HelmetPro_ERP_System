@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { addSiteInfo } from "@/lib/supabaseFunctions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -10,23 +11,23 @@ interface AddSiteInfoProps {
 }
 
 export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
+  const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    siteId: "",
-    siteName: "",
-    siteType: "",
+    site_name: "",
+    site_type: "",
     manager: "",
-    siteAddress: "",
-    siteTelephone: "",
+    site_address: "",
+    site_telephone_number: "",
     currency: "",
     department: "",
-    timeZone: "",
-    zoneOffset: "",
-    areaCode: "",
-    depositPushUrl: "",
-    withdrawPushUrl: "",
-    siteStatus: "",
-    smsSign: "",
-    textingOverTime: "",
+    time_zone: "",
+    zone_offset: 0,
+    area_code: "",
+    deposit_push_url: "",
+    withdraw_push_url: "",
+    site_status: "Available",
+    sms_sign: "",
+    texting_over_time: "No",
     remarks: "",
   });
 
@@ -34,115 +35,108 @@ export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSelectChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Form Data:", formData);
-    onClose(); // Close modal after submission
+    setLoading(true);
+
+    const success = await addSiteInfo(formData);
+    if (success) {
+      alert("Site info added successfully!");
+      onClose();
+      window.location.reload(); // Refresh data after adding new entry
+    } else {
+      alert("Error saving site info");
+    }
+
+    setLoading(false);
   };
 
   return (
-    <div>
-      {/* Glassmorphic Header */}
+    <div className="p-6 bg-gray-50 rounded-lg">
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Input name="site_name" placeholder="Site Name" value={formData.site_name} onChange={handleChange} required />
+          
+          <Select onValueChange={(value) => handleSelectChange("site_type", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Site Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="retail">Retail</SelectItem>
+              <SelectItem value="warehouse">Warehouse</SelectItem>
+              <SelectItem value="office">Office</SelectItem>
+            </SelectContent>
+          </Select>
 
+          <Input name="manager" placeholder="Manager Name" value={formData.manager} onChange={handleChange} required />
+          <Input name="site_address" placeholder="Site Address" value={formData.site_address} onChange={handleChange} required />
+          <Input name="site_telephone_number" placeholder="Telephone Number" value={formData.site_telephone_number} onChange={handleChange} required />
 
-      {/* Form Wrapper */}
-      <div className="p-8 bg-gray-50">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Form Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input name="siteId" placeholder="Site ID" value={formData.siteId} onChange={handleChange} className="input-style" />
-            <Input name="siteName" placeholder="Site Name" value={formData.siteName} onChange={handleChange} className="input-style" />
+          <Select onValueChange={(value) => handleSelectChange("currency", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Currency" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="usd">USD</SelectItem>
+              <SelectItem value="eur">EUR</SelectItem>
+              <SelectItem value="gbp">GBP</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Select onValueChange={(value) => setFormData({ ...formData, siteType: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Site Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="retail">Retail</SelectItem>
-                <SelectItem value="warehouse">Warehouse</SelectItem>
-                <SelectItem value="office">Office</SelectItem>
-              </SelectContent>
-            </Select>
+          <Select onValueChange={(value) => handleSelectChange("department", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Department" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Limbagsik">Limbagsik</SelectItem>
+              <SelectItem value="Limbagsik06--canada">Limbagsik06--canada</SelectItem>
+            </SelectContent>
+          </Select>
+          <Input name="time_zone" placeholder="Time Zone" value={formData.time_zone} onChange={handleChange} required />
+          <Input name="zone_offset" type="number" placeholder="Zone Offset (minutes)" value={formData.zone_offset} onChange={handleChange} required />
+          <Input name="area_code" placeholder="Area Code" value={formData.area_code} onChange={handleChange} required />
+          <Input name="deposit_push_url" placeholder="Deposit Push URL" value={formData.deposit_push_url} onChange={handleChange} />
+          <Input name="withdraw_push_url" placeholder="Withdraw Push URL" value={formData.withdraw_push_url} onChange={handleChange} />
 
-            <Select onValueChange={(value) => setFormData({ ...formData, manager: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Manager" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="john_doe">John Doe</SelectItem>
-                <SelectItem value="jane_smith">Jane Smith</SelectItem>
-              </SelectContent>
-            </Select>
+          <Select onValueChange={(value) => handleSelectChange("site_status", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Site Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Available">Available</SelectItem>
+              <SelectItem value="Under Maintenance">Under Maintenance</SelectItem>
+              <SelectItem value="Inactive">Inactive</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Input name="siteAddress" placeholder="Site Address" value={formData.siteAddress} onChange={handleChange} className="input-style" />
-            <Input name="siteTelephone" placeholder="Telephone Number" value={formData.siteTelephone} onChange={handleChange} className="input-style" />
+          <Input name="sms_sign" placeholder="SMS Sign" value={formData.sms_sign} onChange={handleChange} />
 
-            <Select onValueChange={(value) => setFormData({ ...formData, currency: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="usd">USD</SelectItem>
-                <SelectItem value="eur">EUR</SelectItem>
-                <SelectItem value="gbp">GBP</SelectItem>
-              </SelectContent>
-            </Select>
+          <Select onValueChange={(value) => handleSelectChange("texting_over_time", value)}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select Texting Over Time" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="Yes">Yes</SelectItem>
+              <SelectItem value="No">No</SelectItem>
+            </SelectContent>
+          </Select>
 
-            <Select onValueChange={(value) => setFormData({ ...formData, department: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="finance">Finance</SelectItem>
-                <SelectItem value="it">IT</SelectItem>
-                <SelectItem value="operations">Operations</SelectItem>
-              </SelectContent>
-            </Select>
+          <Input name="remarks" placeholder="Remarks" value={formData.remarks} onChange={handleChange} />
+        </div>
 
-            <Input name="timeZone" placeholder="Time Zone" value={formData.timeZone} onChange={handleChange} className="input-style" />
-            <Input name="zoneOffset" type="number" placeholder="Zone Offset (minutes)" value={formData.zoneOffset} onChange={handleChange} className="input-style" />
-            <Input name="areaCode" placeholder="Area Code" value={formData.areaCode} onChange={handleChange} className="input-style" />
-            <Input name="depositPushUrl" placeholder="Deposit Push URL" value={formData.depositPushUrl} onChange={handleChange} className="input-style" />
-            <Input name="withdrawPushUrl" placeholder="Withdraw Push URL" value={formData.withdrawPushUrl} onChange={handleChange} className="input-style" />
-
-            <Select onValueChange={(value) => setFormData({ ...formData, siteStatus: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Site Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="maintenance">Under Maintenance</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input name="smsSign" placeholder="SMS Sign" value={formData.smsSign} onChange={handleChange} className="input-style" />
-
-            <Select onValueChange={(value) => setFormData({ ...formData, textingOverTime: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Texting Over Time" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="allowed">Allowed</SelectItem>
-                <SelectItem value="restricted">Restricted</SelectItem>
-                <SelectItem value="not_allowed">Not Allowed</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input name="remarks" placeholder="Remarks" value={formData.remarks} onChange={handleChange} className="input-style" />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4">
-            <Button variant="outline" onClick={onClose} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
-              Cancel
-            </Button>
-            <Button variant="default" type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-              Save
-            </Button>
-          </div>
-        </form>
-      </div>
+        <div className="flex justify-end space-x-4 mt-4">
+          <Button variant="outline" onClick={onClose} disabled={loading}>
+            Cancel
+          </Button>
+          <Button variant="default" type="submit" disabled={loading}>
+            {loading ? "Saving..." : "Save"}
+          </Button>
+        </div>
+      </form>
     </div>
   );
 }

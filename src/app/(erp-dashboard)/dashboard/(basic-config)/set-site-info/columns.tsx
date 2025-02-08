@@ -1,7 +1,5 @@
-"use client"
-
-import { ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
+import { ColumnDef } from "@tanstack/react-table";
+import { Button } from "@/components/ui/button";
 
 export type Payment = {
   id: string
@@ -12,26 +10,7 @@ export type Payment = {
   email: string
 }
 
-export const columns: ColumnDef<Payment>[] = [
-  {
-    id: "select",
-    header: ({ table }) => (
-      <Checkbox
-        checked={table.getIsAllRowsSelected()}
-        onCheckedChange={(value) => table.toggleAllRowsSelected(!!value)}
-        aria-label="Select all"
-      />
-    ),
-    cell: ({ row }) => (
-      <Checkbox
-        checked={row.getIsSelected()}
-        onCheckedChange={(value) => row.toggleSelected(!!value)}
-        aria-label="Select row"
-      />
-    ),
-    enableSorting: false,
-    enableHiding: false,
-  },
+export const columns: ColumnDef<any>[] = [
   {
     accessorKey: "site_id",
     header: "Site ID",
@@ -45,11 +24,16 @@ export const columns: ColumnDef<Payment>[] = [
     header: "Site Type",
   },
   {
-    accessorKey: "email",
-    header: "Email",
+    accessorKey: "site_status",
+    header: "Status",
   },
   {
-    accessorKey: "amount",
-    header: "Amount",
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }) => (
+      <Button variant="destructive" onClick={() => console.log("Delete", row.original.site_id)}>
+        Delete
+      </Button>
+    ),
   },
-]
+];

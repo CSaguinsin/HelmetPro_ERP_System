@@ -1,55 +1,54 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { type Payment, columns } from "./columns"
-import { DataTable } from "./data-table"
-import AddSiteInfo from "./add-site-info"
-import Sidebar from "../../../../components/Sidebar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
-import { Menu, Search, Plus } from "lucide-react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { LoadingDots } from '../../../../components/loading-dots'
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
+import DataTable from "./data-table";
+import { columns } from "./columns";
+import AddSiteInfo from "./add-site-info";
+import Sidebar from "../../../../components/Sidebar";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Plus, Search, Menu } from "lucide-react";
+import { LoadingDots } from "../../../../components/loading-dots";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-async function getData(): Promise<Payment[]> {
-  await new Promise(resolve => setTimeout(resolve, 1000))
-
-  return [
-    { id: "728ed52f", amount: 100, site_id: "pending", site_name: "manila", site_type: "pending", email: "m@example.com" },
-    { id: "728ed52f", amount: 100, site_id: "pending", site_name: "manila", site_type: "pending", email: "m@example.com" },
-    { id: "728ed52f", amount: 100, site_id: "pending", site_name: "manila", site_type: "pending", email: "m@example.com" },
-  ]
+async function getData() {
+  const { data, error } = await supabase.from("site_info").select("*");
+  if (error) {
+    console.error("Error fetching site_info:", error);
+    return [];
+  }
+  return data;
 }
 
 export default function DemoPage() {
-  const [data, setData] = useState<Payment[]>([])
-  const [loading, setLoading] = useState(true)
-  const [isModalOpen, setIsModalOpen] = useState(false)
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [filters, setFilters] = useState({
+    siteType: "",
+    siteNumber: "",
+    siteName: "",
+    deviceCode: "",
+  });
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        setLoading(true)
-        const result = await getData()
-        setData(result)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchData()
-  }, [])
+      setLoading(true);
+      const result = await getData();
+      setData(result || []);
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <LoadingDots color="#3B82F6" size={8} speed={0.5} />
       </div>
-    )
+    );
   }
 
   return (
@@ -86,18 +85,11 @@ export default function DemoPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <Select>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Site Type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="type1">Type 1</SelectItem>
-                    <SelectItem value="type2">Type 2</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input placeholder="Site Number" />
-                <Input placeholder="Site Name" />
-                <Input placeholder="Device Code" />
+                <input
+                  placeholder="Site Name"
+                  value={filters.siteName}
+                  onChange={(e) => setFilters({ ...filters, siteName: e.target.value })}
+                />
               </div>
               <div className="flex flex-wrap gap-4">
                 <Button variant="default">
@@ -105,7 +97,7 @@ export default function DemoPage() {
                 </Button>
                 <Button variant="secondary">Reset</Button>
 
-                {/* New Site Info Button (Opens Modal) */}
+                {/* ✅ Fixed: New Site Info Button */}
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline">
@@ -134,5 +126,5 @@ export default function DemoPage() {
         </div>
       </main>
     </div>
-  )
+  );
 }
