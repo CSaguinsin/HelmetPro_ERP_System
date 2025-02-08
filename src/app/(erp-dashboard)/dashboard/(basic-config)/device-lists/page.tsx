@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { type Payment, columns } from "./device-columns"
-import { DeviceDataTable } from "./device-datatable"
+import { DeviceDataTable } from ".//device-datatable"
 import Sidebar from "../../../../components/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,42 +11,23 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Menu, Search, Plus } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { LoadingDots } from '../../../../components/loading-dots'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import AddDeviceInfo from "./add-device-info";
+import { supabase } from "@/lib/supabase";
 
 
-async function getData(): Promise<Payment[]> {
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    
-    return [
-      {
-        id: "728ed52f",
-        amount: 100,
-        site_id: "pending",
-        site_name: "manila",
-        site_type: "pending",
-        email: "m@example.com",
-      },
-      {
-        id: "728ed52f",
-        amount: 100,
-        site_id: "pending",
-        site_name: "manila",
-        site_type: "pending",
-        email: "m@example.com",
-      },
-      {
-        id: "728ed52f",
-        amount: 100,
-        site_id: "pending",
-        site_name: "manila",
-        site_type: "pending",
-        email: "m@example.com",
-      },
-    ]
+async function getData() {
+  const { data, error } = await supabase.from("site_info").select("*");
+  if (error) {
+    console.error("Error fetching site_info:", error);
+    return [];
   }
-
+  return data;
+}
 export default function DeviceLists() {
     const [data, setData] = useState<Payment[]>([])
     const [loading, setLoading] = useState(true)
+    const [isModalOpen, setIsModalOpen] = useState(false);
     const [filters, setFilters] = useState({
       siteType: "",
       siteNumber: "",
@@ -150,9 +131,20 @@ export default function DeviceLists() {
                       <Search className="mr-2 h-4 w-4" /> Inquiry
                     </Button>
                     <Button variant="secondary">Reset</Button>
+                {/* ✅ Fixed: New Site Info Button */}
+                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                  <DialogTrigger asChild>
                     <Button variant="outline">
-                      <Plus className="mr-2 h-4 w-4" /> New Device Info
+                      <Plus className="mr-2 h-4 w-4" /> New Site Info
                     </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-2xl">
+                    <DialogHeader>
+                      <DialogTitle>New Site Information</DialogTitle>
+                    </DialogHeader>
+                    <AddDeviceInfo onClose={() => setIsModalOpen(false)} />
+                  </DialogContent>
+                </Dialog>
                   </div>
                 </CardContent>
               </Card>

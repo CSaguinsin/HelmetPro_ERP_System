@@ -13,6 +13,9 @@ import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
+// ✅ Correctly structured table components
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
 export type SiteInfo = {
   site_id: number
   site_name: string
@@ -55,26 +58,23 @@ export const columns: ColumnDef<SiteInfo>[] = [
   },
   {
     accessorKey: "site_id",
-    header: ({ column }) => (
-      <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Site ID
-        <ArrowUpDown className="ml-2 h-4 w-4" />
-      </Button>
-    ),
+    header: "Site ID",
+    cell: ({ row }) => row.getValue("site_id"),
   },
   {
     accessorKey: "site_name",
     header: "Site Name",
-    cell: ({ row }) => <div className="font-medium">{row.getValue("site_name")}</div>,
+    cell: ({ row }) => row.getValue("site_name"),
   },
   {
     accessorKey: "site_type",
-    header: "Site Type",
+    header: "Type",
     cell: ({ row }) => <Badge variant="outline">{row.getValue("site_type")}</Badge>,
   },
   {
     accessorKey: "manager",
     header: "Manager",
+    cell: ({ row }) => row.getValue("manager"),
   },
   {
     accessorKey: "site_status",
@@ -89,52 +89,61 @@ export const columns: ColumnDef<SiteInfo>[] = [
     },
   },
   {
-    accessorKey: "contact_info",
-    header: "Contact Info",
-    cell: ({ row }) => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost">View</Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Address: {row.original.site_address}</p>
-            <p>Phone: {row.original.site_telephone_number}</p>
-            <p>Area Code: {row.original.area_code}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
+    accessorKey: "site_address",
+    header: "Address",
+    cell: ({ row }) => row.getValue("site_address"),
   },
   {
-    accessorKey: "financial_info",
-    header: "Financial Info",
-    cell: ({ row }) => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost">View</Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Currency: {row.original.currency}</p>
-            <p>Department: {row.original.department}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
+    accessorKey: "site_telephone_number",
+    header: "Phone",
+    cell: ({ row }) => row.getValue("site_telephone_number"),
   },
   {
-    accessorKey: "time_info",
-    header: "Time Info",
+    accessorKey: "currency",
+    header: "Currency",
+    cell: ({ row }) => row.getValue("currency"),
+  },
+  {
+    accessorKey: "department",
+    header: "Department",
+    cell: ({ row }) => row.getValue("department"),
+  },
+  {
+    accessorKey: "time_zone",
+    header: "Time Zone",
+    cell: ({ row }) => row.getValue("time_zone"),
+  },
+  {
+    accessorKey: "zone_offset",
+    header: "Offset",
+    cell: ({ row }) => row.getValue("zone_offset"),
+  },
+  {
+    accessorKey: "area_code",
+    header: "Area Code",
+    cell: ({ row }) => row.getValue("area_code"),
+  },
+  {
+    accessorKey: "sms_sign",
+    header: "SMS Sign",
+    cell: ({ row }) => row.getValue("sms_sign") || "N/A",
+  },
+  {
+    accessorKey: "texting_over_time",
+    header: "Texting Time",
+    cell: ({ row }) => row.getValue("texting_over_time"),
+  },
+  {
+    accessorKey: "remarks",
+    header: "Remarks",
     cell: ({ row }) => (
       <TooltipProvider>
         <Tooltip>
           <TooltipTrigger asChild>
-            <Button variant="ghost">View</Button>
+            <Button variant="ghost" size="sm">View</Button>
           </TooltipTrigger>
-          <TooltipContent>
-            <p>Time Zone: {row.original.time_zone}</p>
-            <p>Zone Offset: {row.original.zone_offset}</p>
+          <TooltipContent className="bg-white shadow-md p-3 rounded-md">
+            <p className="text-sm text-gray-700">{row.getValue("remarks") || "No remarks"}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -163,31 +172,6 @@ export const columns: ColumnDef<SiteInfo>[] = [
     ),
   },
   {
-    accessorKey: "sms_sign",
-    header: "SMS Sign",
-    cell: ({ row }) => row.getValue("sms_sign") || "N/A",
-  },
-  {
-    accessorKey: "texting_over_time",
-    header: "Texting Over Time",
-  },
-  {
-    accessorKey: "remarks",
-    header: "Remarks",
-    cell: ({ row }) => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost">View</Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{row.getValue("remarks") || "No remarks"}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
-  },
-  {
     id: "actions",
     cell: ({ row }) => {
       const site = row.original
@@ -195,20 +179,20 @@ export const columns: ColumnDef<SiteInfo>[] = [
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="ghost" className="h-8 w-8 p-0 flex items-center justify-center">
               <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreHorizontal className="h-5 w-5 text-gray-500" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-48 shadow-md rounded-md">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem onClick={() => navigator.clipboard.writeText(site.site_id.toString())}>
-              Copy site ID
+              Copy Site ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem>View Details</DropdownMenuItem>
             <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
+            <DropdownMenuItem className="text-red-600">Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )

@@ -12,6 +12,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Menu } from "lucide-react";
 import { LoadingDots } from "../../../../components/loading-dots";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Input } from "@/components/ui/input"
 
 async function getData() {
   const { data, error } = await supabase.from("site_info").select("*");
@@ -85,8 +87,27 @@ export default function DemoPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <input
+                <Select value={filters.siteType} onValueChange={(value) => setFilters({ ...filters, siteType: value })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Site Type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="type1">Type 1</SelectItem>
+                    <SelectItem value="type2">Type 2</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  placeholder="Site Number"
+                  value={filters.siteNumber}
+                  onChange={(e) => setFilters({ ...filters, siteNumber: e.target.value })}
+                />
+                <Input
                   placeholder="Site Name"
+                  value={filters.siteName}
+                  onChange={(e) => setFilters({ ...filters, siteName: e.target.value })}
+                />
+                <Input
+                  placeholder="Device Code"
                   value={filters.siteName}
                   onChange={(e) => setFilters({ ...filters, siteName: e.target.value })}
                 />
@@ -96,8 +117,6 @@ export default function DemoPage() {
                   <Search className="mr-2 h-4 w-4" /> Inquiry
                 </Button>
                 <Button variant="secondary">Reset</Button>
-
-                {/* ✅ Fixed: New Site Info Button */}
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                   <DialogTrigger asChild>
                     <Button variant="outline">

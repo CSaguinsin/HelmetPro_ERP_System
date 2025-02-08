@@ -8,7 +8,7 @@ export default function LoginPage() {
   return (
     <div className="flex min-h-screen">
       {/* Left Section (Login Form) */}
-      <div className="flex w-full lg:w-1/2 flex-col justify-center px-4 py-12 sm:px-6 lg:px-8 xl:px-12 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <div className="flex w-full lg:w-1/2 flex-col justify-center px-4 py-12 sm:px-6 lg:px-8 xl:px-12 bg-white">
         <div className="mx-auto w-full max-w-md space-y-8">
           <div className="text-center">
             <Image
