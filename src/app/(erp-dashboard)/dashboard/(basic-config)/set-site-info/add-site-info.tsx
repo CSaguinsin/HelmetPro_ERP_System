@@ -14,45 +14,71 @@ export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     site_name: "",
-    site_type: "",
+    site_type: "",  // 🚨 Must match site_type_enum values
     manager: "",
     site_address: "",
     site_telephone_number: "",
     currency: "",
-    department: "",
+    department: "",  // 🚨 Must match department_enum values
     time_zone: "",
-    zone_offset: 0,
+    zone_offset: 0, // Ensure this remains a number
     area_code: "",
     deposit_push_url: "",
     withdraw_push_url: "",
-    site_status: "Available",
+    site_status: "Available", // 🚨 Must match site_status_enum values
     sms_sign: "",
-    texting_over_time: "No",
+    texting_over_time: "No", // 🚨 Must match texting_over_time_enum values
     remarks: "",
   });
 
+  // 🔹 Handle text inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    const { name, value, type } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: type === "number" ? Number(value) : value,
+    }));
   };
 
+  // 🔹 Handle select dropdowns
   const handleSelectChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  // 🔹 Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    const success = await addSiteInfo(formData);
-    if (success) {
-      alert("Site info added successfully!");
-      onClose();
-      window.location.reload(); // Refresh data after adding new entry
-    } else {
-      alert("Error saving site info");
+    // 🚨 Ensure required fields are filled
+    if (!formData.site_name || !formData.site_type || !formData.manager || 
+        !formData.site_address || !formData.site_telephone_number || !formData.currency ||
+        !formData.department || !formData.time_zone || !formData.zone_offset ||
+        !formData.area_code || !formData.site_status || !formData.texting_over_time) {
+      alert("All required fields must be filled.");
+      setLoading(false);
+      return;
     }
 
-    setLoading(false);
+    try {
+      const success = await addSiteInfo({
+        ...formData,
+        zone_offset: Number(formData.zone_offset), // Ensure it's a number
+      });
+
+      if (success) {
+        alert("Site info added successfully!");
+        onClose();
+        window.location.reload();
+      } else {
+        alert("Error saving site info.");
+      }
+    } catch (error) {
+      console.error("Unexpected error:", error);
+      alert("Something went wrong!");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -60,7 +86,7 @@ export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input name="site_name" placeholder="Site Name" value={formData.site_name} onChange={handleChange} required />
-          
+
           <Select onValueChange={(value) => handleSelectChange("site_type", value)}>
             <SelectTrigger>
               <SelectValue placeholder="Select Site Type" />
@@ -96,6 +122,7 @@ export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
               <SelectItem value="Limbagsik06--canada">Limbagsik06--canada</SelectItem>
             </SelectContent>
           </Select>
+
           <Input name="time_zone" placeholder="Time Zone" value={formData.time_zone} onChange={handleChange} required />
           <Input name="zone_offset" type="number" placeholder="Zone Offset (minutes)" value={formData.zone_offset} onChange={handleChange} required />
           <Input name="area_code" placeholder="Area Code" value={formData.area_code} onChange={handleChange} required />
