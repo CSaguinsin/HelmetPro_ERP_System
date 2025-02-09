@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { type Payment, columns } from "./device-columns"
+import { type DeviceList, columns } from "./device-columns"
 import { DeviceDataTable } from ".//device-datatable"
 import Sidebar from "../../../../components/Sidebar"
 import { Button } from "@/components/ui/button"
@@ -17,15 +17,16 @@ import { supabase } from "@/lib/supabase";
 
 
 async function getData() {
-  const { data, error } = await supabase.from("site_info").select("*");
+  const { data, error } = await supabase.from("device_list").select("*");
   if (error) {
-    console.error("Error fetching site_info:", error);
+    console.error("Error fetching device_list:", error);
     return [];
   }
   return data;
 }
+
 export default function DeviceLists() {
-    const [data, setData] = useState<Payment[]>([])
+  const [data, setData] = useState<DeviceList[]>([]);
     const [loading, setLoading] = useState(true)
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [filters, setFilters] = useState({

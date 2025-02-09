@@ -1,11 +1,11 @@
-"use client"
+"use client";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal, ExternalLink  } from "lucide-react"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
-import { Badge } from "@/components/ui/badge"
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, MoreHorizontal, ExternalLink } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,29 +13,23 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 
-export interface Payment {
-  site_id: number
-  site_name: string
-  site_type: string
-  manager: string
-  site_address: string
-  site_telephone_number: string
-  currency: string
-  department: string
-  time_zone: string
-  zone_offset: number
-  area_code: string
-  deposit_push_url?: string
-  withdraw_push_url?: string
-  site_status: string
-  sms_sign?: string
-  texting_over_time: string
-  remarks?: string
+// Define the correct type for the device_list data
+export interface DeviceList {
+  device_id: number;
+  device_name: string;
+  device_status: "Disable" | "Enable" | "Maintenance"; // Enum values
+  device_type: string;
+  status: string; // Online or Offline
+  protocol_type: string;
+  maturity_time: string; // Timestamp as string (ISO 8601)
+  department: string;
+  customer_name: string;
+  device_reg_id: string;
 }
 
-export const columns: ColumnDef<Payment>[] = [
+export const columns: ColumnDef<DeviceList>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -56,43 +50,79 @@ export const columns: ColumnDef<Payment>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "site_id",
+    accessorKey: "device_id",
     header: ({ column }) => (
       <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-        Site ID
+        Device ID
         <ArrowUpDown className="ml-2 h-4 w-4" />
       </Button>
     ),
   },
   {
-    accessorKey: "site_name",
-    header: "Site Name",
-    cell: ({ row }) => <div className="font-medium">{row.getValue("site_name")}</div>,
+    accessorKey: "device_name",
+    header: "Device Name",
+    cell: ({ row }) => <div className="font-medium">{row.getValue("device_name")}</div>,
   },
   {
-    accessorKey: "site_type",
-    header: "Site Type",
-    cell: ({ row }) => <Badge variant="outline">{row.getValue("site_type")}</Badge>,
-  },
-  {
-    accessorKey: "manager",
-    header: "Manager",
-  },
-  {
-    accessorKey: "site_status",
-    header: "Status",
+    accessorKey: "device_status",
+    header: "Device Status",
     cell: ({ row }) => {
-      const status = row.getValue("site_status") as string
+      const status = row.getValue("device_status") as string | undefined;
+  
+      if (!status) {
+        return <Badge variant="secondary">Unknown</Badge>; // Handle undefined case
+      }
+  
       return (
-        <Badge variant={status === "active" ? "default" : "destructive"}>
+        <Badge variant={status === "Enable" ? "default" : "destructive"}>
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </Badge>
-      )
+      );
     },
   },
   {
-    accessorKey: "contact_info",
-    header: "Contact Info",
+    accessorKey: "device_type",
+    header: "Device Type",
+    cell: ({ row }) => <div>{row.getValue("device_type")}</div>,
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => {
+      const status = row.getValue("status") as string;
+      return (
+        <Badge variant={status === "Online" ? "default" : "destructive"}>
+          {status}
+        </Badge>
+      );
+    },
+  },
+  {
+    accessorKey: "protocol_type",
+    header: "Protocol Type",
+    cell: ({ row }) => <div>{row.getValue("protocol_type")}</div>,
+  },
+  {
+    accessorKey: "maturity_time",
+    header: "Maturity Time",
+    cell: ({ row }) => {
+      const date = new Date(row.getValue("maturity_time"));
+      return <div>{date.toLocaleString()}</div>;
+    },
+  },
+  {
+    accessorKey: "department",
+    header: "Department",
+    cell: ({ row }) => <div>{row.getValue("department")}</div>,
+  },
+  {
+    accessorKey: "customer_name",
+    header: "Customer Name",
+    cell: ({ row }) => <div>{row.getValue("customer_name")}</div>,
+  },
+  {
+    accessorKey: "device_reg_id",
+    header: "Device Reg ID",
     cell: ({ row }) => (
       <TooltipProvider>
         <Tooltip>
@@ -100,90 +130,7 @@ export const columns: ColumnDef<Payment>[] = [
             <Button variant="ghost">View</Button>
           </TooltipTrigger>
           <TooltipContent>
-            <p>Address: {row.original.site_address}</p>
-            <p>Phone: {row.original.site_telephone_number}</p>
-            <p>Area Code: {row.original.area_code}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
-  },
-  {
-    accessorKey: "financial_info",
-    header: "Financial Info",
-    cell: ({ row }) => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost">View</Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Currency: {row.original.currency}</p>
-            <p>Department: {row.original.department}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
-  },
-  {
-    accessorKey: "time_info",
-    header: "Time Info",
-    cell: ({ row }) => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost">View</Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>Time Zone: {row.original.time_zone}</p>
-            <p>Zone Offset: {row.original.zone_offset}</p>
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
-    ),
-  },
-  {
-    accessorKey: "push_urls",
-    header: "Push URLs",
-    cell: ({ row }) => (
-      <div className="flex space-x-2">
-        {row.original.deposit_push_url && (
-          <a href={row.original.deposit_push_url} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm">
-              Deposit <ExternalLink className="ml-1 h-3 w-3" />
-            </Button>
-          </a>
-        )}
-        {row.original.withdraw_push_url && (
-          <a href={row.original.withdraw_push_url} target="_blank" rel="noopener noreferrer">
-            <Button variant="outline" size="sm">
-              Withdraw <ExternalLink className="ml-1 h-3 w-3" />
-            </Button>
-          </a>
-        )}
-      </div>
-    ),
-  },
-  {
-    accessorKey: "sms_sign",
-    header: "SMS Sign",
-    cell: ({ row }) => row.getValue("sms_sign") || "N/A",
-  },
-  {
-    accessorKey: "texting_over_time",
-    header: "Texting Over Time",
-  },
-  {
-    accessorKey: "remarks",
-    header: "Remarks",
-    cell: ({ row }) => (
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Button variant="ghost">View</Button>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p>{row.getValue("remarks") || "No remarks"}</p>
+            <p>{row.getValue("device_reg_id")}</p>
           </TooltipContent>
         </Tooltip>
       </TooltipProvider>
@@ -192,7 +139,7 @@ export const columns: ColumnDef<Payment>[] = [
   {
     id: "actions",
     cell: ({ row }) => {
-      const site = row.original
+      const device = row.original;
 
       return (
         <DropdownMenu>
@@ -204,16 +151,16 @@ export const columns: ColumnDef<Payment>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(site.site_id.toString())}>
-              Copy site ID
+            <DropdownMenuItem onClick={() => navigator.clipboard.writeText(device.device_id.toString())}>
+              Copy Device ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View details</DropdownMenuItem>
+            <DropdownMenuItem>View Details</DropdownMenuItem>
             <DropdownMenuItem>Edit</DropdownMenuItem>
             <DropdownMenuItem>Delete</DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
