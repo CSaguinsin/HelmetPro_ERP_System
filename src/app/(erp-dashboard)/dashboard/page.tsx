@@ -1,53 +1,123 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { supabase } from "@/lib/supabase"
-import Sidebar from "../../components/Sidebar"
-import DeviceStateCard from "../../components/DeviceStateCard"
-import OperatingStatusCard from "../../components/OperatingStatusCard"
-import DeviceEndateCard from "../../components/DeviceEndateCard"
-import RecentSalesCard from "../../components/RecentSalesCard"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
-import { Menu, Bell, Settings, Search } from "lucide-react"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Input } from "@/components/ui/input"
-import { LoadingDots } from '../../components/loading-dots'
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
+import Sidebar from "../../components/Sidebar";
+import DeviceStateCard from "../../components/DeviceStateCard";
+import OperatingStatusCard from "../../components/OperatingStatusCard";
+import DeviceEndateCard from "../../components/DeviceEndateCard";
+import RecentSalesCard from "../../components/RecentSalesCard";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { Menu, Bell, Settings, Search } from "lucide-react";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Input } from "@/components/ui/input";
+import { LoadingDots } from "../../components/loading-dots";
+import { toast } from "react-hot-toast";
+import { v4 as uuidv4 } from "uuid"; // Import UUID Generator
 
 export default function DashboardPage() {
-  const userName = "John Doe" // Replace with actual user data
-  const router = useRouter()
-  const [loading, setLoading] = useState(true)
+  const userName = "John Doe"; // Replace with actual user data
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [deviceUUID, setDeviceUUID] = useState("");
+  const [userClientId, setUserClientId] = useState(null);
 
   useEffect(() => {
     const checkAuth = async () => {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser()
+      const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
-        router.push("/")
+        router.push("/");
       } else {
-        setLoading(false)
+        setLoading(false);
       }
+    };
+
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkAuth();
+    });
+
+    return () => subscription?.unsubscribe();
+  }, [router]);
+
+  // Fetch the logged-in user's user_client_id from Supabase
+  useEffect(() => {
+    const fetchUserClientId = async () => {
+      const { data, error } = await supabase
+        .from("user_clients")
+        .select("user_client_id")
+        .limit(1)
+        .single();
+      
+      if (error) {
+        console.error("Error fetching user_client_id:", error);
+      } else {
+        setUserClientId(data.user_client_id);
+      }
+    };
+
+    fetchUserClientId();
+  }, []);
+
+  // Function to generate a new UUID
+  const generateUUID = () => {
+    const newUUID = uuidv4(); // Generate new UUID
+    setDeviceUUID(newUUID);
+    toast.success("UUID Generated!");
+  };
+
+  // Function to insert the generated UUID into device_list
+  const saveDeviceUUID = async () => {
+    if (!deviceUUID) {
+      toast.error("Generate a UUID first!");
+      return;
+    }
+    if (!userClientId) {
+      toast.error("User Client ID not found!");
+      return;
     }
 
-    checkAuth()
+    const { data, error } = await supabase.from("device_list").insert([
+      {
+        device_id: deviceUUID,
+        user_client_id: userClientId,
+        device_name: "Generated Device",
+        device_status: "Enable",
+        device_type: "Smart storage locker with screen",
+        status: "Offline",
+        protocol_type: "MQTT",
+        maturity_time: new Date().toISOString(),
+        department: "Logistics",
+        customer_name: "Client A",
+        device_reg_id: `DEV-${Math.floor(Math.random() * 10000)}`
+      }
+    ]);
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      checkAuth()
-    })
+    if (error) {
+      console.error("Error inserting device:", error);
+      toast.error("Error saving device!");
+    } else {
+      toast.success("Device saved successfully!");
+      console.log("Inserted device:", data);
+    }
+  };
 
-    return () => subscription?.unsubscribe()
-  }, [router])
+  // Function to copy the UUID to clipboard
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(deviceUUID);
+    toast.success("Copied to clipboard!");
+  };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-screen">
-    <LoadingDots color="#3B82F6" size={8} speed={0.5} />
-    </div>
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <LoadingDots color="#3B82F6" size={8} speed={0.5} />
+      </div>
+    );
   }
 
   return (
@@ -60,7 +130,7 @@ export default function DashboardPage() {
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
         {/* Top Navigation Bar */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
+        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
           <div className="flex items-center justify-between px-4 py-3">
             <div className="flex items-center space-x-4">
               <Sheet>
@@ -76,36 +146,16 @@ export default function DashboardPage() {
               </Sheet>
               <h1 className="text-xl font-semibold">Dashboard</h1>
             </div>
-            <div className="flex items-center space-x-4">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
-                <Input type="search" placeholder="Search..." className="pl-8 w-[200px] md:w-[300px]" />
-              </div>
-              <Button variant="ghost" size="icon">
-                <Bell className="h-5 w-5" />
-              </Button>
-              <Button variant="ghost" size="icon">
-                <Settings className="h-5 w-5" />
-              </Button>
-              <Avatar>
-                <AvatarImage src="/avatar.png" alt={userName} />
-                <AvatarFallback>
-                  {userName
-                    .split(" ")
-                    .map((n) => n[0])
-                    .join("")}
-                </AvatarFallback>
-              </Avatar>
-            </div>
           </div>
         </header>
 
         {/* Dashboard Content */}
         <main className="p-4 md:p-6 lg:p-8">
           <div className="space-y-6">
-            {/* Welcome Message */}
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">Welcome back, {userName}</h2>
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
+                Welcome back, {userName}
+              </h2>
             </div>
 
             {/* Cards Grid */}
@@ -124,12 +174,25 @@ export default function DashboardPage() {
               </Card>
             </div>
 
+            {/* Device UUID Generator Section */}
+            <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
+              <h3 className="text-lg font-semibold mb-2">Generate Device UUID</h3>
+              <Button onClick={generateUUID} className="mr-4">Generate UUID</Button>
+              <Button onClick={saveDeviceUUID} disabled={!deviceUUID} className="mr-4">Save Device</Button>
+              <Button onClick={copyToClipboard} disabled={!deviceUUID} className="mr-4">Copy UUID</Button>
+
+              {deviceUUID && (
+                <p className="mt-4 text-gray-700 dark:text-gray-300">
+                  Generated UUID: <span className="font-mono">{deviceUUID}</span>
+                </p>
+              )}
+            </div>
+
             {/* Recent Sales */}
             <RecentSalesCard />
           </div>
         </main>
       </div>
     </div>
-  )
+  );
 }
-

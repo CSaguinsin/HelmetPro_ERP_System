@@ -1,148 +1,95 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { supabase } from "@/lib/supabase";
+import { toast } from "react-hot-toast";
+import { v4 as uuidv4 } from "uuid";
 
-interface AddSiteInfoProps {
+interface AddDeviceInfoProps {
   onClose: () => void;
 }
 
-export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
-  const [formData, setFormData] = useState({
-    siteId: "",
-    siteName: "",
-    siteType: "",
-    manager: "",
-    siteAddress: "",
-    siteTelephone: "",
-    currency: "",
-    department: "",
-    timeZone: "",
-    zoneOffset: "",
-    areaCode: "",
-    depositPushUrl: "",
-    withdrawPushUrl: "",
-    siteStatus: "",
-    smsSign: "",
-    textingOverTime: "",
-    remarks: "",
-  });
+export default function AddDeviceInfo({ onClose }: AddDeviceInfoProps) {
+  const [deviceUUID, setDeviceUUID] = useState("");
+  const [userClientId, setUserClientId] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  useEffect(() => {
+    const fetchUserClientId = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.error("No authenticated user found.");
+        return;
+      }
+  
+      const { data, error } = await supabase
+        .from("user_clients")
+        .select("user_client_id")
+        .eq("erp_user_id", user.id)
+        .maybeSingle(); // Instead of `.single()`, use `.maybeSingle()` to avoid errors
+  
+      if (error) {
+        console.error("Error fetching user_client_id:", error);
+      } else if (!data) {
+        console.warn("No user_client_id found for the authenticated user.");
+      } else {
+        setUserClientId(data.user_client_id);
+      }
+    };
+  
+    fetchUserClientId();
+  }, []);
+  
+
+  const generateUUID = () => {
+    const newUUID = uuidv4();
+    setDeviceUUID(newUUID);
+    toast.success("UUID Generated!");
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("Form Data:", formData);
-    onClose(); // Close modal after submission
+  const saveDevice = async () => {
+    if (!deviceUUID) {
+      toast.error("Generate a UUID first!");
+      return;
+    }
+    if (!userClientId) {
+      toast.error("User Client ID not found!");
+      return;
+    }
+
+    const { data, error } = await supabase.from("device_list").insert([
+      {
+        device_id: deviceUUID,
+        user_client_id: userClientId,
+        device_name: "Generated Device",
+        device_status: "Enable",
+        device_type: "Smart storage locker with screen",
+        status: "Offline",
+        protocol_type: "MQTT",
+        maturity_time: new Date().toISOString(),
+        department: "Logistics",
+        customer_name: "Client A",
+        device_reg_id: `DEV-${Math.floor(Math.random() * 10000)}`
+      }
+    ]);
+
+    if (error) {
+      console.error("Error inserting device:", error);
+      toast.error("Error saving device!");
+    } else {
+      toast.success("Device saved successfully!");
+      onClose();
+    }
   };
 
   return (
-    <div>
-      {/* Glassmorphic Header */}
-
-
-      {/* Form Wrapper */}
-      <div className="p-8 bg-gray-50">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Form Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Input name="siteId" placeholder="Site ID" value={formData.siteId} onChange={handleChange} className="input-style" />
-            <Input name="siteName" placeholder="Site Name" value={formData.siteName} onChange={handleChange} className="input-style" />
-
-            <Select onValueChange={(value) => setFormData({ ...formData, siteType: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Site Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="retail">Retail</SelectItem>
-                <SelectItem value="warehouse">Warehouse</SelectItem>
-                <SelectItem value="office">Office</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select onValueChange={(value) => setFormData({ ...formData, manager: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Manager" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="john_doe">John Doe</SelectItem>
-                <SelectItem value="jane_smith">Jane Smith</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input name="siteAddress" placeholder="Site Address" value={formData.siteAddress} onChange={handleChange} className="input-style" />
-            <Input name="siteTelephone" placeholder="Telephone Number" value={formData.siteTelephone} onChange={handleChange} className="input-style" />
-
-            <Select onValueChange={(value) => setFormData({ ...formData, currency: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="usd">USD</SelectItem>
-                <SelectItem value="eur">EUR</SelectItem>
-                <SelectItem value="gbp">GBP</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Select onValueChange={(value) => setFormData({ ...formData, department: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Department" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="finance">Finance</SelectItem>
-                <SelectItem value="it">IT</SelectItem>
-                <SelectItem value="operations">Operations</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input name="timeZone" placeholder="Time Zone" value={formData.timeZone} onChange={handleChange} className="input-style" />
-            <Input name="zoneOffset" type="number" placeholder="Zone Offset (minutes)" value={formData.zoneOffset} onChange={handleChange} className="input-style" />
-            <Input name="areaCode" placeholder="Area Code" value={formData.areaCode} onChange={handleChange} className="input-style" />
-            <Input name="depositPushUrl" placeholder="Deposit Push URL" value={formData.depositPushUrl} onChange={handleChange} className="input-style" />
-            <Input name="withdrawPushUrl" placeholder="Withdraw Push URL" value={formData.withdrawPushUrl} onChange={handleChange} className="input-style" />
-
-            <Select onValueChange={(value) => setFormData({ ...formData, siteStatus: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Site Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-                <SelectItem value="maintenance">Under Maintenance</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input name="smsSign" placeholder="SMS Sign" value={formData.smsSign} onChange={handleChange} className="input-style" />
-
-            <Select onValueChange={(value) => setFormData({ ...formData, textingOverTime: value })}>
-              <SelectTrigger className="select-style">
-                <SelectValue placeholder="Select Texting Over Time" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="allowed">Allowed</SelectItem>
-                <SelectItem value="restricted">Restricted</SelectItem>
-                <SelectItem value="not_allowed">Not Allowed</SelectItem>
-              </SelectContent>
-            </Select>
-
-            <Input name="remarks" placeholder="Remarks" value={formData.remarks} onChange={handleChange} className="input-style" />
-          </div>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end space-x-4">
-            <Button variant="outline" onClick={onClose} className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition">
-              Cancel
-            </Button>
-            <Button variant="default" type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
-              Save
-            </Button>
-          </div>
-        </form>
-      </div>
+    <div className="p-8 bg-gray-50 rounded-lg shadow-lg">
+      <h3 className="text-lg font-semibold mb-4">Add New Device</h3>
+      <Button onClick={generateUUID} className="mb-4">Generate UUID</Button>
+      {deviceUUID && <p className="mt-2 text-sm text-gray-700">UUID: {deviceUUID}</p>}
+      <Button onClick={saveDevice} disabled={!deviceUUID} className="mt-4">Save Device</Button>
+      <Button onClick={onClose} className="mt-4 bg-gray-300">Cancel</Button>
     </div>
   );
 }
