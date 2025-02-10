@@ -70,6 +70,7 @@ export default function Home() {
             <div>
               <div className="flex items-center gap-2 mb-4">
                 <div className="rounded-lg bg-white/10 p-2">
+
                 </div>
                 <span className="text-xl font-bold">HelmetPro</span>
               </div>
@@ -120,4 +121,6 @@ const footerLinks = [
     links: ["Documentation", "Support", "API", "Partner Program"],
   },
 ]
+
+
 
