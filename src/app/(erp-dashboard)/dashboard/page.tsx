@@ -44,24 +44,41 @@ export default function DashboardPage() {
     return () => subscription?.unsubscribe();
   }, [router]);
 
-  // Fetch the logged-in user's user_client_id from Supabase
   useEffect(() => {
     const fetchUserClientId = async () => {
-      const { data, error } = await supabase
-        .from("user_clients")
-        .select("user_client_id")
-        .limit(1)
-        .single();
-      
-      if (error) {
-        console.error("Error fetching user_client_id:", error);
-      } else {
-        setUserClientId(data.user_client_id);
+      try {
+        // ✅ Step 1: Get Authenticated User
+        const { data: authData, error: authError } = await supabase.auth.getUser();
+  
+        if (authError || !authData?.user) {
+          console.error("❌ Error fetching authenticated user:", authError?.message);
+          return;
+        }
+  
+        console.log("✅ Authenticated User ID:", authData.user.id); // Debugging
+  
+        // ✅ Step 2: Fetch `user_client_id` by `erp_user_id`
+        const { data, error: userError } = await supabase
+          .from("user_clients")
+          .select("user_client_id")
+          .eq("erp_user_id", authData.user.id)
+          .maybeSingle(); // 🔥 Fix: Avoids crash if no row is found
+  
+        if (userError) {
+          console.error("❌ Error fetching user_client_id:", userError.message);
+        } else {
+          console.log("✅ Fetched user_client_id:", data);
+          setUserClientId(data?.user_client_id || null);
+        }
+      } catch (err) {
+        console.error("❌ Unexpected error in fetchUserClientId:", err);
       }
     };
-
+  
     fetchUserClientId();
   }, []);
+  
+  
 
   // Function to generate a new UUID
   const generateUUID = () => {

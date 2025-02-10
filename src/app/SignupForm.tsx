@@ -18,19 +18,42 @@ export default function SignUpForm() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
 
+
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
   
     try {
-      const { data, error } = await supabase.auth.signUp({
+      // Step 1: Create user in Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
   
-      if (error) {
-        console.error("Signup error:", error);
-        toast({ variant: "destructive", title: "Signup failed", description: error.message });
+      if (authError) {
+        toast({ variant: "destructive", title: "Signup failed", description: authError.message });
+        setIsLoading(false);
+        return;
+      }
+  
+      const user = authData?.user;
+      if (!user) {
+        toast({ variant: "destructive", title: "Signup failed", description: "User not created." });
+        setIsLoading(false);
+        return;
+      }
+  
+      // Step 2: Insert user data into `user_clients` table
+      const { error: userError } = await supabase.from("user_clients").insert([
+        {
+          email,
+          password, // Storing plain text passwords is a security risk (see notes below)
+          erp_user_id: user.id, // Store `auth.users.id` as `erp_user_id`
+        },
+      ]);
+  
+      if (userError) {
+        toast({ variant: "destructive", title: "Signup failed", description: userError.message });
         setIsLoading(false);
         return;
       }
@@ -38,12 +61,12 @@ export default function SignUpForm() {
       toast({ title: "Signup successful", description: "Check your email for a confirmation link." });
       router.push("/dashboard");
     } catch (error) {
-      console.error("Signup error:", error);
       toast({ variant: "destructive", title: "An error occurred", description: "Please try again later." });
     } finally {
       setIsLoading(false);
     }
   }
+  
   
 
   return (
