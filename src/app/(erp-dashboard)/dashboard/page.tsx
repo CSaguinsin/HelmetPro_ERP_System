@@ -7,28 +7,60 @@ import Sidebar from "../../components/Sidebar";
 import DeviceStateCard from "../../components/DeviceStateCard";
 import OperatingStatusCard from "../../components/OperatingStatusCard";
 import DeviceEndateCard from "../../components/DeviceEndateCard";
-import RecentSalesCard from "../../components/RecentSalesCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Bell, Settings, Search } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Input } from "@/components/ui/input";
 import { LoadingDots } from "../../components/loading-dots";
 import { toast } from "react-hot-toast";
-import { v4 as uuidv4 } from "uuid"; // Import UUID Generator
+import { v4 as uuidv4 } from "uuid";
+
+// ✅ Type Definitions
+type Device = {
+  device_id: string;
+  device_name: string;
+  device_status: string;
+  protocol_type: string;
+  customer_nan: string;
+};
+
+type UserClient = {
+  user_client_id: string;
+};
 
 export default function DashboardPage() {
   const userName = "John Doe"; // Replace with actual user data
   const router = useRouter();
-  const [loading, setLoading] = useState(true);
-  const [deviceUUID, setDeviceUUID] = useState("");
-  const [userClientId, setUserClientId] = useState(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [deviceUUID, setDeviceUUID] = useState<string>("");
+  const [userClientId, setUserClientId] = useState<string | null>(null);
+  const [devices, setDevices] = useState<Device[]>([]);
 
+  // ✅ Fetch user devices
+  useEffect(() => {
+    const fetchUserDevices = async () => {
+      if (!userClientId) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("device_list")
+          .select("device_id, device_name, device_status, protocol_type, customer_nan")
+          .eq("user_client_id", userClientId);
+
+        if (error) throw error;
+
+        setDevices(data || []);
+      } catch (err) {
+        console.error("Error fetching devices:", err);
+      }
+    };
+
+    fetchUserDevices();
+  }, [userClientId]);
+
+  // ✅ Check user authentication
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error || !data?.user) {
         router.push("/");
       } else {
         setLoading(false);
@@ -44,86 +76,78 @@ export default function DashboardPage() {
     return () => subscription?.unsubscribe();
   }, [router]);
 
+  // ✅ Fetch User Client ID
   useEffect(() => {
     const fetchUserClientId = async () => {
       try {
-        // ✅ Step 1: Get Authenticated User
         const { data: authData, error: authError } = await supabase.auth.getUser();
-  
+
         if (authError || !authData?.user) {
-          console.error("❌ Error fetching authenticated user:", authError?.message);
+          console.error("Error fetching authenticated user:", authError?.message);
           return;
         }
-  
-        console.log("✅ Authenticated User ID:", authData.user.id); // Debugging
-  
-        // ✅ Step 2: Fetch `user_client_id` by `erp_user_id`
+
         const { data, error: userError } = await supabase
           .from("user_clients")
           .select("user_client_id")
           .eq("erp_user_id", authData.user.id)
-          .maybeSingle(); // 🔥 Fix: Avoids crash if no row is found
-  
-        if (userError) {
-          console.error("❌ Error fetching user_client_id:", userError.message);
-        } else {
-          console.log("✅ Fetched user_client_id:", data);
-          setUserClientId(data?.user_client_id || null);
-        }
+          .maybeSingle();
+
+        if (userError) throw userError;
+
+        setUserClientId(data?.user_client_id || null);
       } catch (err) {
-        console.error("❌ Unexpected error in fetchUserClientId:", err);
+        console.error("Unexpected error in fetchUserClientId:", err);
       }
     };
-  
+
     fetchUserClientId();
   }, []);
-  
-  
 
-  // Function to generate a new UUID
+  // ✅ Generate UUID
   const generateUUID = () => {
-    const newUUID = uuidv4(); // Generate new UUID
+    const newUUID = uuidv4();
     setDeviceUUID(newUUID);
     toast.success("UUID Generated!");
   };
 
-  // Function to insert the generated UUID into device_list
+  // ✅ Save Device UUID
   const saveDeviceUUID = async () => {
-    if (!deviceUUID) {
-      toast.error("Generate a UUID first!");
-      return;
-    }
     if (!userClientId) {
       toast.error("User Client ID not found!");
       return;
     }
 
-    const { data, error } = await supabase.from("device_list").insert([
-      {
-        device_id: deviceUUID,
-        user_client_id: userClientId,
-        device_name: "Generated Device",
-        device_status: "Enable",
-        device_type: "Smart storage locker with screen",
-        status: "Offline",
-        protocol_type: "MQTT",
-        maturity_time: new Date().toISOString(),
-        department: "Logistics",
-        customer_name: "Client A",
-        device_reg_id: `DEV-${Math.floor(Math.random() * 10000)}`
-      }
-    ]);
+    try {
+      const { data, error } = await supabase
+        .from("device_list")
+        .insert([
+          {
+            user_client_id: userClientId,
+            device_name: "Generated Device",
+            device_status: "Enable",
+            device_type: "Smart storage locker with screen",
+            status: "Offline",
+            protocol_type: "MQTT",
+            maturity_time: new Date().toISOString(),
+            department: "Logistics",
+            customer_nan: "Client A",
+            device_reg_id: `DEV-${Math.floor(Math.random() * 10000)}`
+          }
+        ])
+        .select("device_id");
 
-    if (error) {
-      console.error("Error inserting device:", error);
-      toast.error("Error saving device!");
-    } else {
+      if (error) throw error;
+
+      setDeviceUUID(data?.[0]?.device_id || "");
       toast.success("Device saved successfully!");
-      console.log("Inserted device:", data);
+    } catch (err) {
+      console.error("Error inserting device:", err);
+      toast.error("Error saving device!");
     }
   };
 
-  // Function to copy the UUID to clipboard
+  // ✅ Copy UUID to clipboard
   const copyToClipboard = () => {
     navigator.clipboard.writeText(deviceUUID);
     toast.success("Copied to clipboard!");
@@ -139,34 +163,13 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
-      {/* Sidebar for larger screens */}
+      {/* Sidebar */}
       <div className="hidden lg:flex">
         <Sidebar />
       </div>
 
       {/* Main Content */}
       <div className="flex-1 overflow-auto">
-        {/* Top Navigation Bar */}
-        <header className="sticky top-0 z-10 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4">
-          <div className="flex items-center justify-between px-4 py-3">
-            <div className="flex items-center space-x-4">
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button variant="ghost" size="icon" className="lg:hidden">
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle sidebar</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-                  <Sidebar />
-                </SheetContent>
-              </Sheet>
-              <h1 className="text-xl font-semibold">Dashboard</h1>
-            </div>
-          </div>
-        </header>
-
-        {/* Dashboard Content */}
         <main className="p-4 md:p-6 lg:p-8">
           <div className="space-y-6">
             <div className="flex items-center justify-between">
@@ -185,28 +188,30 @@ export default function DashboardPage() {
                   <CardTitle className="text-sm font-medium">Total Devices</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">1,324</div>
+                  <div className="text-2xl font-bold">{devices.length}</div>
                   <p className="text-xs text-muted-foreground">+20.1% from last month</p>
                 </CardContent>
               </Card>
             </div>
 
-            {/* Device UUID Generator Section */}
+            {/* Device List */}
             <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-2">Generate Device UUID</h3>
-              <Button onClick={generateUUID} className="mr-4">Generate UUID</Button>
-              <Button onClick={saveDeviceUUID} disabled={!deviceUUID} className="mr-4">Save Device</Button>
-              <Button onClick={copyToClipboard} disabled={!deviceUUID} className="mr-4">Copy UUID</Button>
-
-              {deviceUUID && (
-                <p className="mt-4 text-gray-700 dark:text-gray-300">
-                  Generated UUID: <span className="font-mono">{deviceUUID}</span>
-                </p>
+              <h3 className="text-lg font-semibold mb-2">Your Vending Machines</h3>
+              {devices.length > 0 ? (
+                <ul>
+                  {devices.map((device) => (
+                    <li key={device.device_id} className="p-2 border-b border-gray-300 dark:border-gray-700">
+                      <p className="text-sm font-medium">Device Name: {device.device_name}</p>
+                      <p className="text-xs text-muted-foreground">Status: {device.device_status}</p>
+                      <p className="text-xs text-muted-foreground">Protocol: {device.protocol_type}</p>
+                      <p className="text-xs text-muted-foreground">Customer: {device.customer_nan}</p>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500 dark:text-gray-400">No devices found.</p>
               )}
             </div>
-
-            {/* Recent Sales */}
-            <RecentSalesCard />
           </div>
         </main>
       </div>
