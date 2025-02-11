@@ -7,6 +7,9 @@ import { PricingSection } from "../app/(website-components)/components/pricing-s
 import { Button } from "@/components/ui/button"
 import { MapPin, Mail, Phone } from "lucide-react"
 import { motion } from "framer-motion"
+import Image from "next/image"
+import Link from "next/link"
+
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -112,8 +115,15 @@ export default function Home() {
           <div className="grid md:grid-cols-4 gap-8">
             <motion.div variants={fadeInUp}>
               <div className="flex items-center gap-2 mb-4">
-                <div className="rounded-lg bg-white/10 p-2"></div>
-                <span className="text-xl font-bold">HelmetPro</span>
+              <Link href="/" className="flex items-center">
+                  <Image
+                    src="/helmetpro/logo.jpeg"
+                    alt="Logo"
+                    width={80}
+                    height={80}
+                    className="h-14 w-auto rounded-lg shadow-md" // Changed from h-20 to h-14
+                  />
+                </Link>
               </div>
               <p className="text-slate-400">The future of helmet cleaning and maintenance.</p>
             </motion.div>

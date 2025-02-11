@@ -4,9 +4,10 @@ import { useState } from "react"
 import Image from "next/image"
 import LoginForm from "../login/page"
 import SignUpForm from "../SignupForm"
-// import { ImageCarousel } from "./image-carousel"
+import { useRouter } from 'next/navigation'
 import { ImageCarousel } from "../image-carousel"
 export default function LoginPage() {
+  const router = useRouter()
   const [isSignUp, setIsSignUp] = useState(false)
 
   return (
@@ -14,7 +15,7 @@ export default function LoginPage() {
       {/* Left Section (Form) */}
       <div className="flex w-full lg:w-1/2 flex-col justify-center px-4 py-12 sm:px-6 lg:px-8 xl:px-12 bg-white">
         <div className="mx-auto w-full max-w-md space-y-8">
-          <div className="text-center">
+          <div className="text-center" onClick={() => router.push('/')}>
             <Image
               src="/helmetpro/logo.jpeg"
               alt="Logo"
