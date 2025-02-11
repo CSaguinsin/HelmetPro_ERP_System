@@ -19,7 +19,6 @@ import {
   RefreshCw 
 } from "lucide-react";
 import { SiteHeader } from "../components/site-header";
-import Link from "next/link";
 import { Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { ReactNode } from "react"
 

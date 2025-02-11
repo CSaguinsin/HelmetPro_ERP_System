@@ -54,7 +54,7 @@ export function HeroSection() {
               className="text-lg text-gray-300 max-w-xl mx-auto lg:mx-0"
               variants={fadeInUp}
             >
-              Experience the future of helmet maintenance with AI-powered cleaning stations. Get a **99.9% sanitized helmet in 15 minutes.**
+              Experience the future of helmet maintenance with Advanced UV-C sanitization technology. Get a 99.9% sanitized helmet in 15 minutes.
             </motion.p>
 
             {/* CTA Buttons */}

@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion"
 import Image from "next/image"
 import { useRouter } from 'next/navigation'
 
-
 export function SiteHeader() {
   const router = useRouter()
   const [isOpen, setIsOpen] = useState(false)
@@ -23,25 +22,40 @@ export function SiteHeader() {
             alt="Logo"
             width={80}
             height={80}
-            className="h-14 w-auto rounded-lg shadow-md" // Changed from h-20 to h-14
+            className="h-14 w-auto rounded-lg shadow-md"
           />
         </Link>
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+
+        {/* Desktop Navigation (Centered) */}
+        <nav className="hidden md:flex flex-1 justify-center items-center gap-10">
           {navLinks.map((link) => (
-            <Link
+            <motion.div
               key={link.href}
-              href={link.href}
-              className="text-lg text-gray-300 hover:text-blue-400 transition-colors"
+              whileHover={{ y: -2 }}
+              className="relative"
             >
-              {link.label}
-            </Link>
+              <Link
+                href={link.href}
+                className="text-lg font-medium text-gray-300 hover:text-blue-400 transition-colors"
+              >
+                {link.label}
+              </Link>
+              <motion.div
+                className="absolute left-0 bottom-0 w-full h-[2px] bg-blue-400 origin-left scale-x-0"
+                whileHover={{ scaleX: 1 }}
+                transition={{ duration: 0.3 }}
+              />
+            </motion.div>
           ))}
         </nav>
 
         {/* CTA Buttons & Mobile Menu Toggle */}
         <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={() => router.push('/authentication')} className="hidden md:inline-flex text-white hover:text-blue-400">
+          <Button 
+            variant="ghost" 
+            onClick={() => router.push('/authentication')} 
+            className="hidden md:inline-flex text-white hover:text-blue-400"
+          >
             LogIn
           </Button>
           <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hidden md:inline-flex">
@@ -55,26 +69,27 @@ export function SiteHeader() {
         </div>
       </div>
 
-      {/* Mobile Menu */}
+      {/* Mobile Menu (Animated Slide-in) */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
             className="absolute top-16 left-0 w-full bg-gray-900/90 backdrop-blur-md shadow-lg border-t border-gray-800 md:hidden"
-            initial={{ opacity: 0, y: -10 }}
+            initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
+            exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
           >
             <div className="flex flex-col items-center py-6 space-y-6">
               {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-lg text-white hover:text-blue-400 transition-colors"
-                  onClick={() => setIsOpen(false)}
-                >
-                  {link.label}
-                </Link>
+                <motion.div key={link.href} whileHover={{ scale: 1.05 }}>
+                  <Link
+                    href={link.href}
+                    className="text-lg text-white hover:text-blue-400 transition-colors"
+                    onClick={() => setIsOpen(false)}
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
               ))}
               <Button className="w-3/4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
                 Find Nearest Location
@@ -87,10 +102,10 @@ export function SiteHeader() {
   )
 }
 
+// Navigation Links
 const navLinks = [
   { href: "/", label: "Home" },
-  { href: "about", label: "About" },
-  { href: "products", label: "Products" },
-  { href: "#pricing", label: "Our Service" },
-  { href: "#locations", label: "Join Us" },
+  { href: "/about", label: "About" },
+  { href: "/products", label: "Products" },
+  { href: "/join-us", label: "Join Us" },
 ]
