@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "HelmetPro - Next.js App",
+  title: "HelmetPro - Helmet Vendo Cleaning Machine",
   description: "Next.js application for HelmetPro",
 };
 
