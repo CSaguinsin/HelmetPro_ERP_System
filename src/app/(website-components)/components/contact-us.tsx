@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { FaPhone, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
+import { Phone, Mail, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const fadeInUp = {
@@ -62,17 +62,17 @@ const ContactSection = () => {
   
   const contactInfo = [
     {
-      icon: FaPhone,
+      icon: Phone,
       text: process.env.NEXT_PUBLIC_CONTACT_PHONE || "+1 234 567 890",
       href: `tel:${process.env.NEXT_PUBLIC_CONTACT_PHONE?.replace(/\s+/g, "")}`,
     },
     {
-      icon: FaEnvelope,
+      icon: Mail,
       text: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "contact@example.com",
       href: `mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`,
     },
     {
-      icon: FaMapMarkerAlt,
+      icon: MapPin,
       text: process.env.NEXT_PUBLIC_CONTACT_ADDRESS || "Address",
       href: process.env.NEXT_PUBLIC_MAPS_URL || "#",
     },
@@ -111,7 +111,7 @@ const ContactSection = () => {
                   className="flex items-center gap-4 text-lg justify-center lg:justify-start hover:text-blue-400 transition-colors"
                   variants={fadeInUp}
                 >
-                  <Icon size={24} color="#60A5FA" />
+                  <Icon size={24} className="text-blue-400" />
                   <span>{text}</span>
                 </motion.a>
               ))}
