@@ -2,6 +2,8 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ArrowRight, CheckCircle } from "lucide-react"
 import { motion } from "framer-motion"
+import { useRouter } from 'next/navigation'
+
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -16,6 +18,7 @@ const staggerContainer = {
 }
 
 export function HeroSection() {
+  const router = useRouter()
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-blue-900 via-black to-gray-900 text-white pb-20">
       {/* Subtle Animated Background */}
@@ -66,14 +69,17 @@ export function HeroSection() {
                 <Button
                   size="lg"
                   className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-md transition-all hover:scale-105"
+                  onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
                 >
-                  Find Nearest Station
+                  Partner With Us Today!
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               </motion.div>
               <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Button size="lg" variant="outline" className="text-black border-gray-600 hover:border-white">
-                  Watch How It Works
+                <Button size="lg" variant="outline" className="text-black border-gray-600 hover:border-white"
+                 onClick={() => router.push('/products')}
+                >
+                  Learn More
                 </Button>
               </motion.div>
             </motion.div>
