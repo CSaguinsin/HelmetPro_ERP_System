@@ -13,7 +13,7 @@ import { useState, FormEvent } from "react"
 import { Facebook, Instagram, MessageCircle } from 'lucide-react';
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-
+import { TawkMessenger } from './components/TawkMessenger'
 
 const product = {
   name: "HelmetPro UV Sanitizer Pro",
@@ -157,6 +157,7 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
+            <TawkMessenger /> {/* Add this line right after the opening div */}
       <SiteHeader />
       
       <main className="flex-1">
