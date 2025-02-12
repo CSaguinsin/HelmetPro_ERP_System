@@ -4,9 +4,8 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import { Users, Target, Zap, Sparkles, CheckCircle, ArrowRight } from "lucide-react"
+import {  Zap, Sparkles, CheckCircle, ArrowRight } from "lucide-react"
 import { SiteHeader } from "../components/site-header"
-import Link from "next/link"
 import { Facebook, Instagram, MessageCircle } from 'lucide-react'
 import { motion } from "framer-motion"
 import { useInView } from "framer-motion"
@@ -71,7 +70,7 @@ export default function AboutUs() {
               className="mt-6 text-lg leading-8 text-white/80 lg:text-xl lg:max-w-3xl mx-auto"
             >
               Revolutionizing helmet hygiene with smart technology and sustainable solutions. 
-              We're making clean, safe helmets accessible to everyone, everywhere.
+              We are making clean, safe helmets accessible to everyone, everywhere.
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 20 }}

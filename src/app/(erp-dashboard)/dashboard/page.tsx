@@ -9,8 +9,7 @@ import OperatingStatusCard from "../../components/OperatingStatusCard";
 import DeviceEndateCard from "../../components/DeviceEndateCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingDots } from "../../components/loading-dots";
-import { toast } from "react-hot-toast";
-import { v4 as uuidv4 } from "uuid";
+
 
 // ✅ Type Definitions
 type Device = {
@@ -21,15 +20,10 @@ type Device = {
   customer_nan: string;
 };
 
-type UserClient = {
-  user_client_id: string;
-};
-
 export default function DashboardPage() {
   const userName = "John Doe"; // Replace with actual user data
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
-  const [deviceUUID, setDeviceUUID] = useState<string>("");
   const [userClientId, setUserClientId] = useState<string | null>(null);
   const [devices, setDevices] = useState<Device[]>([]);
 
@@ -103,55 +97,6 @@ export default function DashboardPage() {
 
     fetchUserClientId();
   }, []);
-
-  // ✅ Generate UUID
-  const generateUUID = () => {
-    const newUUID = uuidv4();
-    setDeviceUUID(newUUID);
-    toast.success("UUID Generated!");
-  };
-
-  // ✅ Save Device UUID
-  const saveDeviceUUID = async () => {
-    if (!userClientId) {
-      toast.error("User Client ID not found!");
-      return;
-    }
-
-    try {
-      const { data, error } = await supabase
-        .from("device_list")
-        .insert([
-          {
-            user_client_id: userClientId,
-            device_name: "Generated Device",
-            device_status: "Enable",
-            device_type: "Smart storage locker with screen",
-            status: "Offline",
-            protocol_type: "MQTT",
-            maturity_time: new Date().toISOString(),
-            department: "Logistics",
-            customer_nan: "Client A",
-            device_reg_id: `DEV-${Math.floor(Math.random() * 10000)}`
-          }
-        ])
-        .select("device_id");
-
-      if (error) throw error;
-
-      setDeviceUUID(data?.[0]?.device_id || "");
-      toast.success("Device saved successfully!");
-    } catch (err) {
-      console.error("Error inserting device:", err);
-      toast.error("Error saving device!");
-    }
-  };
-
-  // ✅ Copy UUID to clipboard
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(deviceUUID);
-    toast.success("Copied to clipboard!");
-  };
 
   if (loading) {
     return (

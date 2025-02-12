@@ -2,11 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/lib/supabase";
 import { toast } from "react-hot-toast";
 import { v4 as uuidv4 } from "uuid";
-
 interface AddDeviceInfoProps {
   onClose: () => void;
 }
@@ -58,7 +56,7 @@ export default function AddDeviceInfo({ onClose }: AddDeviceInfoProps) {
       return;
     }
 
-    const { data, error } = await supabase.from("device_list").insert([
+    const { error } = await supabase.from("device_list").insert([
       {
         device_id: deviceUUID,
         user_client_id: userClientId,

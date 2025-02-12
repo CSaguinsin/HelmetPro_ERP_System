@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader } from "lucide-react";
+import { Eye, EyeOff, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,6 +17,7 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -31,19 +32,19 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
       if (error) {
         toast({
           variant: "destructive",
-          title: "Sign up failed",
+          title: "Signup failed",
           description: error.message,
         });
         return;
       }
 
       toast({
-        title: "Sign up successful",
+        title: "Signup successful",
         description: "Please check your email to verify your account.",
       });
       switchToLogin();
     } catch (error) {
-      console.error("Sign up error:", error);
+      console.error("Signup error:", error);
       toast({
         variant: "destructive",
         title: "An error occurred",
@@ -56,28 +57,39 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
-      <div>
-        <Label htmlFor="email">Email address</Label>
-        <Input
-          id="email"
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-          placeholder="you@example.com"
-        />
-      </div>
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="email">Email address</Label>
+          <Input
+            id="email"
+            type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            placeholder="you@example.com"
+          />
+        </div>
 
-      <div>
-        <Label htmlFor="password">Password</Label>
-        <Input
-          id="password"
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          placeholder="Create a password"
-        />
+        <div>
+          <Label htmlFor="password">Password</Label>
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              placeholder="Enter your password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 flex items-center pr-3"
+            >
+              {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
+            </button>
+          </div>
+        </div>
       </div>
 
       <Button type="submit" className="w-full" disabled={isLoading}>
@@ -94,7 +106,7 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
       <p className="text-sm text-gray-600 text-center">
         Already have an account?{" "}
         <a href="#" onClick={(e) => { e.preventDefault(); switchToLogin(); }} className="font-medium text-blue-600 hover:underline">
-          Sign in
+          Log in
         </a>
       </p>
     </form>

@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import Image from "next/image"
-import LoginForm from "../login/page"
-import SignUpForm from "../SignupForm"
+import { SignUpForm } from "../../components/SignUpForm";
+import { LoginForm } from "../../components/LoginForm";
 import { useRouter } from 'next/navigation'
 import { ImageCarousel } from "../image-carousel"
 export default function LoginPage() {

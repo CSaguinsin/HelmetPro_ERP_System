@@ -14,24 +14,25 @@ export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     site_name: "",
-    site_type: "",  // 🚨 Must match site_type_enum values
+    site_type: "",
     manager: "",
     site_address: "",
     site_telephone_number: "",
     currency: "",
-    department: "",  // 🚨 Must match department_enum values
+    department: "",
     time_zone: "",
-    zone_offset: 0, // Ensure this remains a number
+    zone_offset: 0,
     area_code: "",
+    location: "", // ✅ Added missing property
     deposit_push_url: "",
     withdraw_push_url: "",
-    site_status: "Available", // 🚨 Must match site_status_enum values
+    site_status: "Available",
     sms_sign: "",
-    texting_over_time: "No", // 🚨 Must match texting_over_time_enum values
+    texting_over_time: "No",
     remarks: "",
   });
 
-  // 🔹 Handle text inputs
+  // Handle text inputs
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target;
     setFormData((prev) => ({
@@ -40,21 +41,22 @@ export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
     }));
   };
 
-  // 🔹 Handle select dropdowns
+  // Handle select dropdowns
   const handleSelectChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // 🔹 Form submission
+  // Form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
 
-    // 🚨 Ensure required fields are filled
+    // Ensure required fields are filled
     if (!formData.site_name || !formData.site_type || !formData.manager || 
         !formData.site_address || !formData.site_telephone_number || !formData.currency ||
         !formData.department || !formData.time_zone || !formData.zone_offset ||
-        !formData.area_code || !formData.site_status || !formData.texting_over_time) {
+        !formData.area_code || !formData.site_status || !formData.texting_over_time || 
+        !formData.location) { // ✅ Ensure location is filled
       alert("All required fields must be filled.");
       setLoading(false);
       return;
@@ -101,6 +103,7 @@ export default function AddSiteInfo({ onClose }: AddSiteInfoProps) {
           <Input name="manager" placeholder="Manager Name" value={formData.manager} onChange={handleChange} required />
           <Input name="site_address" placeholder="Site Address" value={formData.site_address} onChange={handleChange} required />
           <Input name="site_telephone_number" placeholder="Telephone Number" value={formData.site_telephone_number} onChange={handleChange} required />
+          <Input name="location" placeholder="Location" value={formData.location} onChange={handleChange} required /> {/* ✅ Added Location Input */}
 
           <Select onValueChange={(value) => handleSelectChange("currency", value)}>
             <SelectTrigger>

@@ -29,7 +29,19 @@ interface DataTableProps<TData, TValue> {
 export default function DataTable<TData, TValue>({ columns, data }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = useState({});
 
-  // ✅ Ensure columns and data are defined
+  // ✅ Ensure Hooks are always called in the same order
+  const table = useReactTable({
+    data: data ?? [], // Ensure data is always an array
+    columns: columns ?? [], // Ensure columns is always an array
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    enableRowSelection: true,
+    onRowSelectionChange: setRowSelection,
+    state: { rowSelection },
+  });
+
   if (!columns || columns.length === 0) {
     console.error("DataTable Error: `columns` is empty or undefined");
     return <p className="text-center text-red-500">Error: Table columns are missing</p>;
@@ -40,23 +52,11 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
     return <p className="text-center text-red-500">Error: No data available</p>;
   }
 
-  const table = useReactTable({
-    data,
-    columns,
-    getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    getSortedRowModel: getSortedRowModel(),
-    getFilteredRowModel: getFilteredRowModel(),
-    enableRowSelection: true,
-    onRowSelectionChange: setRowSelection,
-    state: { rowSelection },
-  });
-
   return (
     <div className="rounded-md border">
       <Table>
         <TableHeader>
-          {table.getHeaderGroups()?.map((headerGroup) => ( // ✅ Use optional chaining
+          {table.getHeaderGroups().map((headerGroup) => (
             <TableRow key={headerGroup.id}>
               {headerGroup.headers.map((header) => (
                 <TableHead key={header.id}>
@@ -64,13 +64,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
                 </TableHead>
               ))}
             </TableRow>
-          )) ?? (
-            <TableRow>
-              <TableHead colSpan={columns.length} className="text-center">
-                No headers available.
-              </TableHead>
-            </TableRow>
-          )}
+          ))}
         </TableHeader>
         <TableBody>
           {table.getRowModel().rows.length > 0 ? (

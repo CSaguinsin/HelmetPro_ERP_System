@@ -3,7 +3,7 @@
 import { motion } from "framer-motion";
 import { useState } from "react";
 import { FaPhone, FaEnvelope, FaMapMarkerAlt } from "react-icons/fa";
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -28,7 +28,6 @@ const ContactSection = () => {
     e.preventDefault();
     setIsSubmitting(true);
   
-    // Use environment variable for the script URL
     const scriptURL = process.env.NEXT_PUBLIC_GOOGLE_SCRIPT_URL;
     
     if (!scriptURL) {
@@ -44,7 +43,7 @@ const ContactSection = () => {
     });
 
     try {
-      const response = await fetch(scriptURL, {
+      await fetch(scriptURL, {
         method: "POST",
         mode: "no-cors",
         body: form
@@ -79,10 +78,8 @@ const ContactSection = () => {
     },
   ];
 
-  // Rest of the component remains the same
   return (
     <section id="contact" className="py-24 md:py-32 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
-      {/* Previous JSX remains the same */}
       <div className="container mx-auto max-w-6xl px-6 text-center">
         <motion.h2 
           className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6" 
@@ -101,11 +98,10 @@ const ContactSection = () => {
           whileInView="animate"
           viewport={{ once: true }}
         >
-          We're here to help! Whether you have questions about our <strong>Helmet Cleaning Vending Machine</strong>, feedback, or just want to say hello, reach out to us via email, phone, or visit our office. We look forward to connecting with you!
+          We&apos;re here to help! Whether you have questions about our <strong>Helmet Cleaning Vending Machine</strong>, feedback, or just want to say hello, reach out to us via email, phone, or visit our office. We look forward to connecting with you!
         </motion.p>
 
         <div className="grid lg:grid-cols-2 gap-12 items-center">
-          {/* Contact Info Section */}
           <motion.div variants={staggerChildren} initial="initial" whileInView="animate" viewport={{ once: true }}>
             <div className="space-y-6">
               {contactInfo.map(({ icon: Icon, text, href }) => (

@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import DataTable from "./data-table";
-import { columns } from "./columns";
+import { columns, SiteInfo } from "./columns"; // ✅ Import SiteInfo type
 import AddSiteInfo from "./add-site-info";
 import Sidebar from "../../../../components/Sidebar";
 import { Button } from "@/components/ui/button";
@@ -12,22 +12,25 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, Search, Menu } from "lucide-react";
 import { LoadingDots } from "../../../../components/loading-dots";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 
-async function getData() {
+// Fetch site information from Supabase
+async function getData(): Promise<SiteInfo[]> {
   const { data, error } = await supabase.from("site_info").select("*");
+
   if (error) {
     console.error("Error fetching site_info:", error);
     return [];
   }
-  return data;
+
+  return data as SiteInfo[]; // ✅ Ensure type matches columns.ts
 }
 
 export default function DemoPage() {
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [data, setData] = useState<SiteInfo[]>([]); // ✅ Corrected type
+  const [loading, setLoading] = useState<boolean>(true);
+  const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [filters, setFilters] = useState({
     siteType: "",
     siteNumber: "",
@@ -39,9 +42,10 @@ export default function DemoPage() {
     const fetchData = async () => {
       setLoading(true);
       const result = await getData();
-      setData(result || []);
+      setData(result);
       setLoading(false);
     };
+
     fetchData();
   }, []);
 
@@ -87,7 +91,10 @@ export default function DemoPage() {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
-                <Select value={filters.siteType} onValueChange={(value) => setFilters({ ...filters, siteType: value })}>
+                <Select
+                  value={filters.siteType}
+                  onValueChange={(value) => setFilters({ ...filters, siteType: value })}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Site Type" />
                   </SelectTrigger>
@@ -108,8 +115,8 @@ export default function DemoPage() {
                 />
                 <Input
                   placeholder="Device Code"
-                  value={filters.siteName}
-                  onChange={(e) => setFilters({ ...filters, siteName: e.target.value })}
+                  value={filters.deviceCode}
+                  onChange={(e) => setFilters({ ...filters, deviceCode: e.target.value })}
                 />
               </div>
               <div className="flex flex-wrap gap-4">
@@ -139,7 +146,7 @@ export default function DemoPage() {
               <CardTitle>Site Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <DataTable columns={columns} data={data} />
+              <DataTable columns={columns} data={data} /> {/* ✅ Corrected type */}
             </CardContent>
           </Card>
         </div>
