@@ -3,7 +3,7 @@
 import { SiteHeader } from "../app/(website-components)/components/site-header"
 import { HeroSection } from "../app/(website-components)/components/hero-section"
 import { HowItWorks } from "../app/(website-components)/components/how-it-works"
-import { PricingSection } from "../app/(website-components)/components/pricing-section"
+import  ContactSection  from "../app/(website-components)/components/contact-us"
 import { Button } from "@/components/ui/button"
 import { MapPin, Mail, Phone, Sparkles, ShieldCheck, Zap, Timer } from "lucide-react"
 import { motion, Variants } from "framer-motion"
@@ -127,8 +127,8 @@ const footerLinks: FooterSection[] = [
 
 const contactInfo = [
   { icon: MapPin, text: "Find locations near you", href: "/locations" },
-  { icon: Mail, text: "support@helmetpro.com", href: "mailto:support@helmetpro.com" },
-  { icon: Phone, text: "(555) 123-4567", href: "tel:+15551234567" },
+  { icon: Mail, text: "partnerships@helmetprosolutions.com", href: "mailto:partnerships@helmetprosolutions.com" },
+  { icon: Phone, text: "+63 962-753-3915", href: "tel:+63 962-753-3915" },
 ]
 
 export default function Home() {
@@ -271,81 +271,7 @@ export default function Home() {
       </section>
 
         {/* Contact Section */}
-        <section id="contact" className="py-24 md:py-32 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 text-white">
-          <div className="container mx-auto max-w-6xl px-6 text-center">
-            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight mb-6">
-              Get in Touch
-            </h2>
-            <p className="text-lg text-gray-300 mb-12 max-w-2xl mx-auto">
-              We're here to help! Reach out to us for support or partnership inquiries.
-            </p>
-
-            <div className="grid lg:grid-cols-2 gap-12 items-center">
-              <motion.div
-                initial="initial"
-                whileInView="animate"
-                viewport={{ once: true }}
-                variants={staggerChildren}
-              >
-                <div className="space-y-6">
-                  {contactInfo.map(({ icon: Icon, text, href }) => (
-                    <motion.a
-                      key={text}
-                      href={href}
-                      className="flex items-center gap-4 text-lg justify-center lg:justify-start hover:text-blue-400 transition-colors"
-                      variants={fadeInUp}
-                    >
-                      <Icon className="h-6 w-6 text-blue-400" />
-                      <span>{text}</span>
-                    </motion.a>
-                  ))}
-                </div>
-              </motion.div>
-
-              <motion.div
-                className="bg-white/10 backdrop-blur-md p-8 rounded-3xl shadow-lg"
-                initial="initial"
-                whileInView="animate"
-                viewport={{ once: true }}
-                variants={fadeInUp}
-              >
-                <form onSubmit={handleSubmit} className="space-y-6">
-                  <input
-                    type="text"
-                    placeholder="Name"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full p-4 rounded-lg bg-gray-800 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                  <input
-                    type="email"
-                    placeholder="Email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full p-4 rounded-lg bg-gray-800 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                  <textarea
-                    placeholder="Message"
-                    rows={4}
-                    required
-                    value={formData.message}
-                    onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                    className="w-full p-4 rounded-lg bg-gray-800 border border-gray-600 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
-                  />
-                  <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                    className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 transition-all disabled:opacity-50"
-                  >
-                    {isSubmitting ? "Sending..." : "Send Message"}
-                  </Button>
-                </form>
-              </motion.div>
-            </div>
-          </div>
-        </section>
+          <ContactSection />
       </main>
 
 

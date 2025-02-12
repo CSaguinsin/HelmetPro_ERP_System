@@ -11,24 +11,50 @@ declare global {
 
 export function TawkMessenger() {
   useEffect(() => {
-    // Initialize Tawk_API
-    window.Tawk_API = window.Tawk_API || {};
-    window.Tawk_LoadStart = new Date();
+    const tawkId = process.env.NEXT_PUBLIC_TAWK_ID;
+    const tawkPath = process.env.NEXT_PUBLIC_TAWK_PATH;
 
-    // Create and load the script
+    if (!tawkId || !tawkPath) {
+      console.error('Tawk.to configuration is missing');
+      return;
+    }
+
+    if (document.getElementById('tawk-script')) {
+      return;
+    }
+
+    if (!window.Tawk_API) {
+      window.Tawk_API = {};
+      window.Tawk_LoadStart = new Date();
+    }
+
     const script = document.createElement('script');
+    script.id = 'tawk-script';
     script.async = true;
-    script.src = 'https://embed.tawk.to/67243b532480f5b4f5971b2a/1ibioffge';
+    script.src = `https://embed.tawk.to/${tawkId}/${tawkPath}`;
     script.charset = 'UTF-8';
     script.setAttribute('crossorigin', '*');
 
+    script.onerror = (error) => {
+      console.error('Error loading Tawk.to widget:', error);
+    };
+
     document.body.appendChild(script);
 
-    // Cleanup
     return () => {
-      document.body.removeChild(script);
+      const existingScript = document.getElementById('tawk-script');
+      if (existingScript?.parentNode) {
+        existingScript.parentNode.removeChild(existingScript);
+      }
+      
+      if (window.Tawk_API) {
+        window.Tawk_API = undefined;
+      }
+      if (window.Tawk_LoadStart) {
+        window.Tawk_LoadStart = undefined;
+      }
     };
   }, []);
 
-  return null; // This component doesn't render anything
+  return null;
 }
