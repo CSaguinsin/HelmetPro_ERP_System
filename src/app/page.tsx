@@ -7,8 +7,8 @@ import ContactSection from "../app/(website-components)/components/contact-us";
 import { motion } from "framer-motion";
 import Image from "next/image";
 import Link from "next/link";
-import { Facebook, Instagram, MessageCircle } from "lucide-react";
-
+import { Facebook, Instagram } from "lucide-react";
+import { FaWhatsapp } from "react-icons/fa";
 import { TawkMessenger } from "./components/TawkMessenger";
 
 // Removed unused import: Variants
@@ -72,15 +72,28 @@ export default function Home() {
               </Link>
               <p className="text-slate-400">The future of helmet cleaning and maintenance.</p>
               <div className="flex space-x-4">
-                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" aria-label="Facebook">
+                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" 
+                aria-label="Facebook"
+                onClick={() => window.open("https://www.facebook.com/helmetprosolutions", "_blank")}
+                >
                   <Facebook size={24} />
                 </a>
-                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" aria-label="Instagram">
+                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" 
+                aria-label="Instagram"
+                onClick={() => window.open("https://www.instagram.com/helmetpro_vendo/", "_blank")}
+                >
                   <Instagram size={24} />
                 </a>
-                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" aria-label="Messenger">
-                  <MessageCircle size={24} />
-                </a>
+                <a
+                href="https://wa.me/639627533915"
+                className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full"
+                aria-label="WhatsApp"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <FaWhatsapp size={24} />
+              </a>
+
               </div>
             </motion.div>
 

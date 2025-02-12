@@ -58,9 +58,13 @@ export function SiteHeader() {
           >
             LogIn
           </Button>
-          <Button className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hidden md:inline-flex">
-            Partner With Us
-          </Button>
+          <Button
+  className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hidden md:inline-flex"
+  onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+>
+  Partner With Us
+</Button>
+
 
           {/* Mobile Menu Button */}
           <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2">
