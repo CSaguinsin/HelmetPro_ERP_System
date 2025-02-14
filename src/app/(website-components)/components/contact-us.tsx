@@ -61,25 +61,19 @@ const ContactSection = () => {
   };
 
   const mapUrl = process.env.NEXT_PUBLIC_MAPS_EMBED_URL || 
-  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3864.6740398614957!2d120.98404967515013!3d14.38826168223996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397d3923b0a80ed%3A0xaa763d5cde01dacf!2sAgoho%20St.%20Phase%202%20central!5e0!3m2!1sen!2sph!4v1739379760925!5m2!1sen!2sph";
+  "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3864.6682928913924!2d120.9863951!3d14.3885938!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3397d3b0e5a510eb%3A0x66d07e63c978d0e4!2sHelmetPRO%20-%20Helmet%20Cleaning%20Vending%20Machine!5e0!3m2!1sen!2sph!4v1739496538887!5m2!1sen!2sph";
 
-  
   const contactInfo = [
     {
       icon: Phone,
-      text: process.env.NEXT_PUBLIC_CONTACT_PHONE || "+1 234 567 890",
-      href: `tel:${process.env.NEXT_PUBLIC_CONTACT_PHONE?.replace(/\s+/g, "")}`,
+      text: "+63 962 753 3915",
+      href: "tel:+639627533915",
     },
     {
       icon: Mail,
-      text: process.env.NEXT_PUBLIC_CONTACT_EMAIL || "contact@example.com",
-      href: `mailto:${process.env.NEXT_PUBLIC_CONTACT_EMAIL}`,
+      text: "partnerships@helmetprosolutions.com",
+      href: "mailto:partnerships@helmetprosolutions.com",
     },
-    // {
-    //   icon: MapPin,
-    //   text: process.env.NEXT_PUBLIC_CONTACT_ADDRESS || "Address",
-    //   href: process.env.NEXT_PUBLIC_MAPS_URL || "#",
-    // },
   ];
 
   return (
@@ -101,7 +95,6 @@ const ContactSection = () => {
         </motion.div>
 
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-8">
-          {/* Left Column - Contact Info & Map */}
           <div className="space-y-8">
             <motion.div 
               className="bg-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
@@ -127,30 +120,26 @@ const ContactSection = () => {
               </div>
             </motion.div>
 
-            {/* Map Section */}
             <motion.div
-        className="rounded-2xl overflow-hidden shadow-xl border border-white/10"
-        variants={fadeInUp}
-        initial="initial"
-        whileInView="animate"
-        viewport={{ once: true }}
-      >
-        <iframe
-          src={mapUrl}
-          width="100%"
-          height="400"
-          style={{ border: 0 }}
-          allowFullScreen
-          loading="lazy"
-          referrerPolicy="no-referrer-when-downgrade"
-          className="grayscale hover:grayscale-0 transition-all"
-        />
-      </motion.div>
-
-
+              className="rounded-2xl overflow-hidden shadow-xl border border-white/10"
+              variants={fadeInUp}
+              initial="initial"
+              whileInView="animate"
+              viewport={{ once: true }}
+            >
+              <iframe
+                src={mapUrl}
+                width="100%"
+                height="400"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="grayscale hover:grayscale-0 transition-all"
+              />
+            </motion.div>
           </div>
 
-          {/* Right Column - Contact Form */}
           <motion.div
             className="bg-white/5 backdrop-blur-lg rounded-2xl p-8 shadow-xl border border-white/10"
             variants={fadeInUp}
@@ -207,22 +196,8 @@ const ContactSection = () => {
                 />
               </div>
 
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-[1.02] disabled:opacity-50 font-semibold py-6 text-lg"
-              >
-                {isSubmitting ? (
-                  <span className="flex items-center justify-center">
-                    <svg className="animate-spin h-5 w-5 mr-3" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"/>
-                    </svg>
-                    Sending...
-                  </span>
-                ) : (
-                  "Send Message"
-                )}
+              <Button type="submit" disabled={isSubmitting} className="w-full bg-gradient-to-r from-blue-500 to-cyan-500">
+                {isSubmitting ? "Sending..." : "Send Message"}
               </Button>
             </form>
           </motion.div>

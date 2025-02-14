@@ -71,7 +71,7 @@ export function HowItWorks() {
 const steps = [
   {
     title: "Locate & Scan",
-    description: "Find the nearest station and scan your helmet's QR code for personalized cleaning.",
+    description: "First find the nearest station.",
   },
   {
     title: "Place & Select",
@@ -79,6 +79,6 @@ const steps = [
   },
   {
     title: "Wait & Collect",
-    description: "Our AI-powered system thoroughly cleans your helmet in just 15 minutes.",
+    description: "Our Advanced UV-C sanitization technology thoroughly cleans your helmet in just 15 minutes.",
   },
 ]
