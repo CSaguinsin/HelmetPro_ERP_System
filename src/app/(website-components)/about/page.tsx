@@ -6,13 +6,11 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import {  Zap, Sparkles, CheckCircle, ArrowRight } from "lucide-react"
 import { SiteHeader } from "../components/site-header"
-import { Facebook, Instagram } from 'lucide-react'
 import { motion } from "framer-motion"
 import { useInView } from "framer-motion"
 import { ReactNode, useRef } from "react"
 import { useRouter } from 'next/navigation'
-import Link from "next/link";
-import { FaWhatsapp } from "react-icons/fa";
+import Footer from "../components/footer";
 
 interface FadeInViewProps {
   children: ReactNode;
@@ -37,16 +35,12 @@ const FadeInView = ({ children, delay = 0 }: FadeInViewProps) => {
   )
 }
 
-const footerLinks = [
-  { title: "Company", links: ["About", "Careers", "Press", "Blog"] },
-  { title: "Product", links: ["Features", "Pricing", "Security", "Enterprise"] },
-  { title: "Resources", links: ["Documentation", "Support", "API", "Partner Program"] }
-];
+
 
 export default function AboutUs() {
   const router = useRouter()
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-10 lg:pt-0">
       <SiteHeader />
       
       {/* Hero Section with Gradient Background */}
@@ -252,59 +246,7 @@ export default function AboutUs() {
       </FadeInView>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-200 py-12">
-        <motion.div className="container max-w-screen-xl mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <motion.div className="space-y-6">
-              <Link href="/" className="inline-block">
-                <Image src="/helmetpro/logo.jpeg" alt="HelmetPro Logo" width={80} height={80} className="h-14 w-auto rounded-lg shadow-md" />
-              </Link>
-              <p className="text-slate-400">The future of helmet cleaning and maintenance.</p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" 
-                aria-label="Facebook"
-                onClick={() => window.open("https://www.facebook.com/helmetprosolutions", "_blank")}
-                >
-                  <Facebook size={24} />
-                </a>
-                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" 
-                aria-label="Instagram"
-                onClick={() => window.open("https://www.instagram.com/helmetpro_vendo/", "_blank")}
-                >
-                  <Instagram size={24} />
-                </a>
-                <a
-                href="https://wa.me/639627533915"
-                className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full"
-                aria-label="WhatsApp"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FaWhatsapp size={24} />
-              </a>
-
-              </div>
-            </motion.div>
-
-            {footerLinks.map((section) => (
-              <motion.div key={section.title}>
-                <h3 className="font-semibold mb-4 text-lg">{section.title}</h3>
-                <ul className="space-y-3">
-                  {section.links.map((link) => (
-                    <motion.li key={link} whileHover={{ x: 5 }}>
-                      <a href="#" className="text-slate-400 hover:text-white">{link}</a>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
-            <p className="text-sm">© {new Date().getFullYear()} HelmetPro. All rights reserved.</p>
-          </motion.div>
-        </motion.div>
-      </footer>
+        <Footer />
     </div>
   )
 }

@@ -6,8 +6,6 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import Link from "next/link";
-import { FaWhatsapp } from "react-icons/fa";
 import { 
   ArrowRight, 
   CheckCircle, 
@@ -20,15 +18,11 @@ import {
   RefreshCw 
 } from "lucide-react";
 import { SiteHeader } from "../components/site-header";
-import { Facebook, Instagram } from 'lucide-react';
 import { ReactNode } from "react"
+import Footer from "../components/footer";
 
 
-const footerLinks = [
-  { title: "Company", links: ["About", "Careers", "Press", "Blog"] },
-  { title: "Product", links: ["Features", "Pricing", "Security", "Enterprise"] },
-  { title: "Resources", links: ["Documentation", "Support", "API", "Partner Program"] }
-];
+
 
 // Animation wrapper component
 const FadeInView = ({ children, delay = 0 }: FadeInViewProps) => {
@@ -69,7 +63,7 @@ const product = {
     {
       icon: Timer,
       title: "Quick Clean",
-      description: "Complete sanitization in just 15 minutes"
+      description: "Complete sanitization in just 8mins 40 seconds and the cleaning process is adjustable"
     },
     {
       icon: ShieldCheck,
@@ -92,7 +86,7 @@ const product = {
 
 export default function ProductPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900">
+    <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900 pt-10 lg:pt-10">
       <SiteHeader />
       
       {/* Original Hero Section */}
@@ -139,76 +133,75 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Product Showcase Section */}
-      <section className="relative pt-20 pb-32 overflow-hidden">
-        <div className="container mx-auto px-4">
-          <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
-            {/* Product Image */}
-            <motion.div 
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8 }}
-              className="lg:w-1/2"
-            >
-              <div className="relative lg:w-full lg:h-[50rem] h-full aspect-square rounded-3xl overflow-hidden bg-blue-600/10 backdrop-blur-xl border border-blue-500/20">
-                <Image
-                  src="/helmetpro/ProductImage_1.png"
-                  alt="HelmetPro UV Sanitizer"
-                  fill
-                  className="object-cover"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent" />
-              </div>
-            </motion.div>
+{/* Product Showcase Section */}
+<section className="relative pt-20 pb-32 overflow-hidden">
+  <div className="container mx-auto px-4">
+    <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
+      {/* Product Image */}
+      <motion.div 
+        initial={{ opacity: 0, x: -50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8 }}
+        className="lg:w-1/2 w-full"
+      >
+        <div className="relative w-full h-[50rem] rounded-3xl overflow-hidden bg-blue-600/10 backdrop-blur-xl border border-blue-500/20">
+          <Image
+            src="/helmetpro/ProductImage_1.png"
+            alt="HelmetPro UV Sanitizer"
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent" />
+        </div>
+      </motion.div>
 
-            {/* Product Info */}
-            <motion.div 
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.8, delay: 0.2 }}
-              className="lg:w-1/2"
-            >
-              <Badge className="mb-4 bg-blue-500/10 text-blue-300 border-blue-500/20 backdrop-blur-xl">
-                New Release
-              </Badge>
-              <h1 className="text-4xl lg:text-6xl font-bold text-white mb-4">
-                {product.name}
-              </h1>
-              <p className="text-xl text-blue-300 mb-6">
-                {product.tagline}
-              </p>
-              <p className="text-gray-300 text-lg mb-8">
-                {product.description}
-              </p>
-              
-              <div className="flex items-center gap-6 mb-8">
-                <span className="text-4xl font-bold text-white">{product.price}</span>
-                <div className="flex items-center gap-2">
-                  <span className="text-yellow-500">★</span>
-                  <span className="text-white">{product.rating}</span>
-                  <span className="text-gray-400">({product.reviews} reviews)</span>
-                </div>
-              </div>
-
-              <div className="flex gap-4">
-                <Button className="px-8 py-6 bg-blue-600 hover:bg-blue-700 text-lg">
-                  Buy Now
-                </Button>
-                <Button variant="outline" className="px-8 py-6 border-blue-500/20 text-blue-300 hover:bg-blue-500/10 text-lg">
-                  Learn More
-                </Button>
-              </div>
-            </motion.div>
+      {/* Product Info */}
+      <motion.div 
+        initial={{ opacity: 0, x: 50 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.8, delay: 0.2 }}
+        className="lg:w-1/2 w-full"
+      >
+        <Badge className="mb-4 bg-blue-500/10 text-blue-300 border-blue-500/20 backdrop-blur-xl">
+          New Release
+        </Badge>
+        <h1 className="text-4xl lg:text-6xl font-bold text-white mb-4">
+          {product.name}
+        </h1>
+        <p className="text-xl text-blue-300 mb-6">
+          {product.tagline}
+        </p>
+        <p className="text-gray-300 text-lg mb-8">
+          {product.description}
+        </p>
+        
+        <div className="flex items-center gap-6 mb-8">
+          <span className="text-4xl font-bold text-white">{product.price}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-yellow-500">★</span>
+            <span className="text-white">{product.rating}</span>
+            <span className="text-gray-400">({product.reviews} reviews)</span>
           </div>
         </div>
 
-        {/* Background Elements */}
-        <div className="absolute top-0 left-0 w-full h-full">
-          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/20 rounded-full filter blur-3xl" />
-          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl" />
+        <div className="flex gap-4">
+          <Button className="px-8 py-6 bg-blue-600 hover:bg-blue-700 text-lg">
+            Buy Now
+          </Button>
+          <Button variant="outline" className="px-8 py-6 border-blue-500/20 text-blue-300 hover:bg-blue-500/10 text-lg">
+            Learn More
+          </Button>
         </div>
-      </section>
+      </motion.div>
+    </div>
+  </div>
 
+  {/* Background Elements */}
+  <div className="absolute top-0 left-0 w-full h-full">
+    <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/20 rounded-full filter blur-3xl" />
+    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl" />
+  </div>
+</section>
       {/* Features Section */}
       <section className="py-24 relative bg-white">
         <div className="container mx-auto px-4">
@@ -288,7 +281,8 @@ export default function ProductPage() {
               { icon: Smartphone, title: "HD Touch All-In-One", desc: "Features an HD touch display for smooth, intuitive interaction." },
               { icon: Zap, title: "Breathe Ambient Lighting", desc: "Elegant ambient lighting for enhanced user comfort." },
               { icon: CheckCircle, title: "Helmet Washing Area", desc: "Dedicated washing area for convenience and hygiene." },
-              { icon: Timer, title: "Coin Ware", desc: "Equipped with a coin ware for easy, cash-based transactions." }
+              { icon: Timer, title: "Coin and Bill Payment", desc: "Equipped with a coin or bill slot for easy, cash-based transactions." },
+              { icon: Shield, title: "Card Reader or QR Payment", desc: "Equipped card reader or QR payment for seamless and secured transactions" }
             ].map((spec, index) => (
               <motion.div
                 key={spec.title}
@@ -297,7 +291,7 @@ export default function ProductPage() {
                 transition={{ duration: 0.5, delay: index * 0.1 }}
                 viewport={{ once: true }}
               >
-                <Card className="p-6 bg-gray-800 border-gray-700/50 rounded-lg shadow-md flex items-start gap-4">
+                <Card className="p-6 bg-gray-800 border-gray-700/50 h-[11rem] rounded-lg shadow-md flex items-start gap-4">
                   <div className="p-3 rounded-lg bg-blue-500/10">
                     <spec.icon className="w-6 h-6 text-blue-400" />
                   </div>
@@ -337,59 +331,7 @@ export default function ProductPage() {
       </FadeInView>
 
       {/* Original Footer */}
-      <footer className="bg-slate-900 text-slate-200 py-12">
-        <motion.div className="container max-w-screen-xl mx-auto px-4">
-          <div className="grid md:grid-cols-4 gap-8">
-            <motion.div className="space-y-6">
-              <Link href="/" className="inline-block">
-                <Image src="/helmetpro/logo.jpeg" alt="HelmetPro Logo" width={80} height={80} className="h-14 w-auto rounded-lg shadow-md" />
-              </Link>
-              <p className="text-slate-400">The future of helmet cleaning and maintenance.</p>
-              <div className="flex space-x-4">
-                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" 
-                aria-label="Facebook"
-                onClick={() => window.open("https://www.facebook.com/helmetprosolutions", "_blank")}
-                >
-                  <Facebook size={24} />
-                </a>
-                <a href="#" className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full" 
-                aria-label="Instagram"
-                onClick={() => window.open("https://www.instagram.com/helmetpro_vendo/", "_blank")}
-                >
-                  <Instagram size={24} />
-                </a>
-                <a
-                href="https://wa.me/639627533915"
-                className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full"
-                aria-label="WhatsApp"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <FaWhatsapp size={24} />
-              </a>
-
-              </div>
-            </motion.div>
-
-            {footerLinks.map((section) => (
-              <motion.div key={section.title}>
-                <h3 className="font-semibold mb-4 text-lg">{section.title}</h3>
-                <ul className="space-y-3">
-                  {section.links.map((link) => (
-                    <motion.li key={link} whileHover={{ x: 5 }}>
-                      <a href="#" className="text-slate-400 hover:text-white">{link}</a>
-                    </motion.li>
-                  ))}
-                </ul>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
-            <p className="text-sm">© {new Date().getFullYear()} HelmetPro. All rights reserved.</p>
-          </motion.div>
-        </motion.div>
-      </footer>
+            <Footer />
     </div>
   );
 }

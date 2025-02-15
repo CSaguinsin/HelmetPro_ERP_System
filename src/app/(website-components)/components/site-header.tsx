@@ -59,12 +59,11 @@ export function SiteHeader() {
             LogIn
           </Button>
           <Button
-  className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hidden md:inline-flex"
-  onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
->
-  Partner With Us
-</Button>
-
+            className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white hidden md:inline-flex"
+            onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+          >
+            Partner With Us
+          </Button>
 
           {/* Mobile Menu Button */}
           <button onClick={() => setIsOpen(!isOpen)} className="md:hidden p-2">
@@ -95,9 +94,27 @@ export function SiteHeader() {
                   </Link>
                 </motion.div>
               ))}
-              <Button className="w-3/4 bg-gradient-to-r from-blue-500 to-cyan-500 text-white">
-                Find Nearest Location
-              </Button>
+              <div className="flex flex-col w-3/4 gap-4">
+                <Button 
+                  variant="ghost" 
+                  onClick={() => {
+                    router.push('/authentication')
+                    setIsOpen(false)
+                  }}
+                  className="text-white hover:text-blue-400"
+                >
+                  LogIn
+                </Button>
+                <Button 
+                  className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+                  onClick={() => {
+                    window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")
+                    setIsOpen(false)
+                  }}
+                >
+                  Partner With Us
+                </Button>
+              </div>
             </div>
           </motion.div>
         )}
