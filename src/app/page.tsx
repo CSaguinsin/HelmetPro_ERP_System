@@ -3,7 +3,6 @@
 import { SiteHeader } from "../app/(website-components)/components/site-header";
 import { HeroSection } from "../app/(website-components)/components/hero-section";
 import { HowItWorks } from "../app/(website-components)/components/how-it-works";
-import ContactSection from "../app/(website-components)/components/contact-us";
 import Footer from "../app/(website-components)/components/footer";
 import { motion } from "framer-motion";
 import { TawkMessenger } from "./components/TawkMessenger";
@@ -51,7 +50,7 @@ export default function Home() {
         </section>
 
         {/* Contact Section */}
-        <ContactSection />
+        {/* <ContactSection /> */}
       </main>
 
         <Footer />

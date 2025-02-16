@@ -23,7 +23,6 @@ import Footer from "../components/footer";
 
 
 
-
 // Animation wrapper component
 const FadeInView = ({ children, delay = 0 }: FadeInViewProps) => {
   const ref = useRef<HTMLDivElement>(null)

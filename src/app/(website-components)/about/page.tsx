@@ -177,11 +177,11 @@ export default function AboutUs() {
                         <p className="text-base lg:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
                           {feature.description}
                         </p>
-                        <Button className="rounded-full bg-blue-600 text-white hover:bg-blue-700"
-                       
-                        >
-                          Learn More <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
+                        <Button className="rounded-full bg-white px-6 py-5 text-base lg:px-8 lg:py-6 lg:text-lg font-semibold text-blue-600 hover:bg-blue-50"
+               onClick={() => router.push('/products')}
+              >
+                Learn More <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
                       </div>
                       <div className="relative aspect-square w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl">
                         <Image 
@@ -209,9 +209,11 @@ export default function AboutUs() {
                         <p className="text-base lg:text-lg text-gray-600 dark:text-gray-300 leading-relaxed">
                           {feature.description}
                         </p>
-                        <Button className="rounded-full bg-blue-600 text-white hover:bg-blue-700">
-                          Learn More <ArrowRight className="ml-2 h-5 w-5" />
-                        </Button>
+                        <Button className="rounded-full bg-white px-6 py-5 text-base lg:px-8 lg:py-6 lg:text-lg font-semibold text-blue-600 hover:bg-blue-50"
+               onClick={() => router.push('/products')}
+              >
+                Learn More <ArrowRight className="ml-2 h-5 w-5" />
+              </Button>
                       </div>
                     </>
                   )}
