@@ -79,8 +79,8 @@ export default function ContactSection() {
   const contactInfo = [
     {
       icon: Phone,
-      text: "+63 962 753 3915",
-      href: "tel:+639627533915",
+      text: "+63 962 816 4788",
+      href: "tel:+639628164788",
     },
     {
       icon: Mail,

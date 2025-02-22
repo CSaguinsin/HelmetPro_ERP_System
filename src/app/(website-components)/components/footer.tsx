@@ -22,7 +22,7 @@ export default function Footer() {
             title: "Contact Us",
             links: [
                 { name: "partnerships@helmetprosolutions.com", href: "mailto:partnerships@helmetprosolutions.com" },
-                { name: "+63-962-753-3915", href: "tel:+63-962-753-3915" },
+                { name: "+63 962 816 4788", href: "tel:+63 962 816 4788" },
                 { name: "Camella Springville Molino 3 Bacoor", href: "#" }
             ]
         },
@@ -51,7 +51,7 @@ export default function Footer() {
                                 <Instagram size={24} />
                             </a>
                             <a
-                                href="https://wa.me/639627533915"
+                                href="https://wa.me/639628164788"
                                 className="text-slate-400 hover:text-white p-2 hover:bg-slate-800 rounded-full"
                                 aria-label="WhatsApp"
                                 target="_blank"
