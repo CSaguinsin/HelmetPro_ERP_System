@@ -81,8 +81,8 @@ export function HeroSection() {
               <Button
                 size="lg"
                 variant="outline"
-                className="text-black border-violet-400 hover:bg-violet-400/10"
-                onClick={() => router.push("/products")}
+                className="text-black border-violet-400 hover:bg-violet-white"
+                onClick={() => router.push("/about")}
               >
                 Learn More
               </Button>

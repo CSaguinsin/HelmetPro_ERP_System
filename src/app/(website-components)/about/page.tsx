@@ -82,9 +82,9 @@ export default function AboutUs() {
               className="mt-10 flex items-center justify-center gap-x-6"
             >
               <Button className="rounded-full bg-white px-6 py-5 text-base lg:px-8 lg:py-6 lg:text-lg font-semibold text-blue-600 hover:bg-blue-50"
-               onClick={() => router.push('/products')}
+               onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
               >
-                Learn More <ArrowRight className="ml-2 h-5 w-5" />
+                Buy Now <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
             </motion.div>
           </div>

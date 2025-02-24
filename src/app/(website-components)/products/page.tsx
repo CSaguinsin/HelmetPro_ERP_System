@@ -20,6 +20,7 @@ import {
 import { SiteHeader } from "../components/site-header";
 import { ReactNode } from "react"
 import Footer from "../components/footer";
+import { useRouter } from 'next/navigation'
 
 
 
@@ -84,6 +85,7 @@ const product = {
 };
 
 export default function ProductPage() {
+  const router = useRouter()
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900 pt-10 lg:pt-10">
       <SiteHeader />
@@ -184,10 +186,14 @@ export default function ProductPage() {
         </div>
 
         <div className="flex gap-4">
-          <Button className="px-8 py-6 bg-blue-600 hover:bg-blue-700 text-lg">
+          <Button className="px-8 py-6 bg-blue-600 hover:bg-blue-700 text-lg"
+          onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+          >
             Buy Now
           </Button>
-          <Button variant="outline" className="px-8 py-6 border-blue-500/20 text-blue-300 hover:bg-blue-500/10 text-lg">
+          <Button variant="outline" className="px-8 py-6 border-blue-500/20 text-blue-300 hover:bg-white text-lg"
+          onClick={() => router.push("/about")}
+          >
             Learn More
           </Button>
         </div>
