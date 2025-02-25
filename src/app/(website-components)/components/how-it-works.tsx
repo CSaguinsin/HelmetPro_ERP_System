@@ -79,6 +79,6 @@ const steps = [
   },
   {
     title: "Wait & Collect",
-    description: "Our Advanced UV-C sanitization technology thoroughly cleans your helmet in just 15 minutes.",
+    description: "Our Advanced UV-C sanitization technology thoroughly cleans your helmet in just 8 minutes.",
   },
 ]

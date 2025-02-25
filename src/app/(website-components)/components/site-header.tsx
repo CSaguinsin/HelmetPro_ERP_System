@@ -127,7 +127,7 @@ export function SiteHeader() {
 const navLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About" },
-  { href: "/products", label: "Products" },
+  { href: "/products", label: "Product" },
   { href: "/contact-us", label: "Contact Us" },
   { href: "/join-us", label: "Join Us" },
 ]

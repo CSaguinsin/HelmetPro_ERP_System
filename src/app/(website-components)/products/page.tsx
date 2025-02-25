@@ -63,7 +63,7 @@ const product = {
     {
       icon: Timer,
       title: "Quick Clean",
-      description: "Complete sanitization in just 8mins 40 seconds and the cleaning process is adjustable"
+      description: "Complete sanitization in just 8 minutes and the cleaning process is adjustable"
     },
     {
       icon: ShieldCheck,

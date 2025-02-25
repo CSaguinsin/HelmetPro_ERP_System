@@ -60,7 +60,7 @@ export function HeroSection() {
 
             <motion.p className="text-lg text-gray-300 max-w-xl" variants={fadeInUp}>
               Experience the future of helmet maintenance with Advanced UV-C sanitization technology. Get a 99.9%
-              sanitized helmet in 15 minutes.
+              sanitized helmet in 8 minutes.
             </motion.p>
 
             {/* CTA Buttons */}
@@ -92,7 +92,7 @@ export function HeroSection() {
             <motion.div className="grid grid-cols-2 sm:grid-cols-3 gap-4" variants={staggerContainer}>
               {[
                 "99.9% Sanitization",
-                "15-Min Clean",
+                "8-Min Clean",
                 "Smart Detection",
                 "Eco-Friendly",
                 "Mobile App Control",
