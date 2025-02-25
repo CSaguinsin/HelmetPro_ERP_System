@@ -189,7 +189,7 @@ export default function ProductPage() {
           <Button className="px-8 py-6 bg-blue-600 hover:bg-blue-700 text-lg"
           onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
           >
-            Buy Now
+            Get A Quote
           </Button>
           <Button variant="outline" className="px-8 py-6 border-blue-500/20 text-blue-300 hover:bg-white text-lg"
           onClick={() => router.push("/about")}
