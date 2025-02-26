@@ -15,7 +15,8 @@ export default function Footer() {
                 { name: "About", href: "/about" },
                 { name: "Products", href: "/products" },
                 { name: "Join Us", href: "/join-us" },
-                { name: "Partner With Us", href: "https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform" }
+                { name: "Partner With Us", href: "https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform" },
+                { name: "Terms & Conditions", href: "/terms" }
             ]
         },
         {
