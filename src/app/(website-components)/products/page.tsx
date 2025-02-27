@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useRef } from 'react';
-import { motion, useInView } from "framer-motion";
+import React, { useRef, useState, useEffect } from 'react';
+import { motion, useInView, AnimatePresence } from "framer-motion";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,14 +15,40 @@ import {
   Zap,
   Shield, 
   Smartphone, 
-  RefreshCw 
+  RefreshCw,
+  X 
 } from "lucide-react";
 import { SiteHeader } from "../components/site-header";
 import { ReactNode } from "react"
 import Footer from "../components/footer";
 import { useRouter } from 'next/navigation'
 
+// Calendly component from the first file
+interface CalendlyProps {
+  url: string;
+}
 
+const Calendly: React.FC<CalendlyProps> = ({ url }) => {
+  useEffect(() => {
+    // Load the Calendly script
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  return (
+    <div className="calendly-inline-widget" 
+      data-url={url}
+      style={{ minWidth: "320px", height: "700px" }}>
+    </div>
+  );
+};
 
 // Animation wrapper component
 const FadeInView = ({ children, delay = 0 }: FadeInViewProps) => {
@@ -86,6 +112,14 @@ const product = {
 
 export default function ProductPage() {
   const router = useRouter()
+  // State for Calendly modal
+  const [showCalendly, setShowCalendly] = useState(false)
+  
+  // Function to toggle Calendly modal
+  const toggleCalendly = () => {
+    setShowCalendly(!showCalendly);
+  };
+  
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900 pt-10 lg:pt-10">
       <SiteHeader />
@@ -134,79 +168,80 @@ export default function ProductPage() {
         </div>
       </section>
 
-{/* Product Showcase Section */}
-<section className="relative pt-20 pb-32 overflow-hidden">
-  <div className="container mx-auto px-4">
-    <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
-      {/* Product Image */}
-      <motion.div 
-        initial={{ opacity: 0, x: -50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8 }}
-        className="lg:w-1/2 w-full"
-      >
-        <div className="relative w-full h-[50rem] rounded-3xl overflow-hidden bg-blue-600/10 backdrop-blur-xl border border-blue-500/20">
-          <Image
-            src="/helmetpro/ProductImage_1.png"
-            alt="HelmetPro UV Sanitizer"
-            fill
-            className="object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent" />
-        </div>
-      </motion.div>
+      {/* Product Showcase Section */}
+      <section className="relative pt-20 pb-32 overflow-hidden">
+        <div className="container mx-auto px-4">
+          <div className="relative z-10 flex flex-col lg:flex-row items-center gap-16">
+            {/* Product Image */}
+            <motion.div 
+              initial={{ opacity: 0, x: -50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8 }}
+              className="lg:w-1/2 w-full"
+            >
+              <div className="relative w-full h-[50rem] rounded-3xl overflow-hidden bg-blue-600/10 backdrop-blur-xl border border-blue-500/20">
+                <Image
+                  src="/helmetpro/ProductImage_1.png"
+                  alt="HelmetPro UV Sanitizer"
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-blue-900/50 to-transparent" />
+              </div>
+            </motion.div>
 
-      {/* Product Info */}
-      <motion.div 
-        initial={{ opacity: 0, x: 50 }}
-        animate={{ opacity: 1, x: 0 }}
-        transition={{ duration: 0.8, delay: 0.2 }}
-        className="lg:w-1/2 w-full"
-      >
-        <Badge className="mb-4 bg-blue-500/10 text-blue-300 border-blue-500/20 backdrop-blur-xl">
-          New Release
-        </Badge>
-        <h1 className="text-4xl lg:text-6xl font-bold text-white mb-4">
-          {product.name}
-        </h1>
-        <p className="text-xl text-blue-300 mb-6">
-          {product.tagline}
-        </p>
-        <p className="text-gray-300 text-lg mb-8">
-          {product.description}
-        </p>
-        
-        <div className="flex items-center gap-6 mb-8">
-          <span className="text-4xl font-bold text-white">{product.price}</span>
-          <div className="flex items-center gap-2">
-            <span className="text-yellow-500">★</span>
-            <span className="text-white">{product.rating}</span>
-            <span className="text-gray-400">({product.reviews} reviews)</span>
+            {/* Product Info */}
+            <motion.div 
+              initial={{ opacity: 0, x: 50 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="lg:w-1/2 w-full"
+            >
+              <Badge className="mb-4 bg-blue-500/10 text-blue-300 border-blue-500/20 backdrop-blur-xl">
+                New Release
+              </Badge>
+              <h1 className="text-4xl lg:text-6xl font-bold text-white mb-4">
+                {product.name}
+              </h1>
+              <p className="text-xl text-blue-300 mb-6">
+                {product.tagline}
+              </p>
+              <p className="text-gray-300 text-lg mb-8">
+                {product.description}
+              </p>
+              
+              <div className="flex items-center gap-6 mb-8">
+                <span className="text-4xl font-bold text-white">{product.price}</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-yellow-500">★</span>
+                  <span className="text-white">{product.rating}</span>
+                  <span className="text-gray-400">({product.reviews} reviews)</span>
+                </div>
+              </div>
+
+              <div className="flex gap-4">
+                <Button className="px-8 py-6 bg-blue-600 hover:bg-blue-700 text-lg"
+                  onClick={toggleCalendly}
+                >
+                  Get A Quote
+                </Button>
+                <Button variant="outline" className="px-8 py-6 border-blue-500/20 text-blue-300 hover:bg-white text-lg"
+                  onClick={() => router.push("/about")}
+                >
+                  Learn More
+                </Button>
+              </div>
+            </motion.div>
           </div>
         </div>
 
-        <div className="flex gap-4">
-          <Button className="px-8 py-6 bg-blue-600 hover:bg-blue-700 text-lg"
-          onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
-          >
-            Get A Quote
-          </Button>
-          <Button variant="outline" className="px-8 py-6 border-blue-500/20 text-blue-300 hover:bg-white text-lg"
-          onClick={() => router.push("/about")}
-          >
-            Learn More
-          </Button>
+        {/* Background Elements */}
+        <div className="absolute top-0 left-0 w-full h-full">
+          <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/20 rounded-full filter blur-3xl" />
+          <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl" />
         </div>
-      </motion.div>
-    </div>
-  </div>
-
-  {/* Background Elements */}
-  <div className="absolute top-0 left-0 w-full h-full">
-    <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-blue-500/20 rounded-full filter blur-3xl" />
-    <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl" />
-  </div>
-</section>
+      </section>
+      
       {/* Features Section */}
       <section className="py-24 relative bg-white">
         <div className="container mx-auto px-4">
@@ -255,7 +290,6 @@ export default function ProductPage() {
         </div>
       </section>
 
-      {/* Specifications Section */}
       {/* Specifications Section */}
       <section className="py-24 relative bg-gray-900">
         <div className="container mx-auto px-4">
@@ -311,7 +345,6 @@ export default function ProductPage() {
         </div>
       </section>
 
-
       {/* CTA Section */}
       <FadeInView>
         <section className="relative overflow-hidden bg-blue-600 py-16 lg:py-24">
@@ -324,8 +357,9 @@ export default function ProductPage() {
                 Join thousands of satisfied users who trust HelmetPro for their helmet maintenance needs.
               </p>
               <div className="mt-10 flex justify-center gap-x-6">
-                <Button className="rounded-full bg-white px-8 py-6 text-lg font-semibold text-blue-600 hover:bg-blue-50"
-                 onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+                <Button 
+                  className="rounded-full bg-white px-8 py-6 text-lg font-semibold text-blue-600 hover:bg-blue-50"
+                  onClick={toggleCalendly}
                 >
                   Get Started Now
                 </Button>
@@ -336,7 +370,36 @@ export default function ProductPage() {
       </FadeInView>
 
       {/* Original Footer */}
-            <Footer />
+      <Footer />
+
+      {/* Calendly Modal */}
+      <AnimatePresence>
+        {showCalendly && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-lg w-full max-w-4xl max-h-screen overflow-auto"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="text-xl font-bold">Schedule a Meeting</h2>
+                <Button variant="ghost" onClick={toggleCalendly} className="p-1">
+                  <X className="h-6 w-6" />
+                </Button>
+              </div>
+              <div className="p-0">
+                <Calendly url="https://calendly.com/admin-helmetprosolutions/30min" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
