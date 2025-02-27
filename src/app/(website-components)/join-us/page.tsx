@@ -1,16 +1,15 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import Link from "next/link";
 import { SiteHeader } from "../components/site-header";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowRight, BookOpen, BarChart, Package, Clock, Shield } from "lucide-react";
+import { ArrowRight, BookOpen, BarChart, Package, Clock, Shield, X } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RevenueCalculator from "@/app/components/RevenueCalculator";
 import Footer from "../components/footer";
-
+import { useState, useEffect } from "react";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -24,9 +23,41 @@ const staggerContainer = {
   },
 };
 
+// Calendly component
+interface CalendlyProps {
+  url: string;
+}
 
+const Calendly: React.FC<CalendlyProps> = ({ url }) => {
+  useEffect(() => {
+    // Load the Calendly script
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  return (
+    <div className="calendly-inline-widget" 
+      data-url={url}
+      style={{ minWidth: "320px", height: "700px" }}>
+    </div>
+  );
+};
 
 export default function JoinUs() {
+  const [showCalendly, setShowCalendly] = useState(false);
+  
+  // Function to toggle Calendly modal
+  const toggleCalendly = () => {
+    setShowCalendly(!showCalendly);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900">
       <SiteHeader />
@@ -159,16 +190,15 @@ export default function JoinUs() {
             Potential Income Computation
           </motion.h2>
           <motion.p className="text-gray-300 text-center mb-12 max-w-4xl mx-auto" variants={fadeInUp}>
-            With our HelmetPro vending machines, you can tap into a lucrative market that is rapidly growing and evolving. These innovative machines not only provide a convenient solution for helmet cleaning but also present an exciting opportunity for entrepreneurs and business owners looking to diversify their income streams. Here iss a comprehensive breakdown of potential earnings based on various utilization assumptions. By analyzing different scenarios—such as operating hours, customer demand, and pricing strategies—you can gain valuable insights into how our vending machines can maximize your profitability.
+            With our HelmetPro vending machines, you can tap into a lucrative market that is rapidly growing and evolving. These innovative machines not only provide a convenient solution for helmet cleaning but also present an exciting opportunity for entrepreneurs and business owners looking to diversify their income streams. Here is a comprehensive breakdown of potential earnings based on various utilization assumptions. By analyzing different scenarios—such as operating hours, customer demand, and pricing strategies—you can gain valuable insights into how our vending machines can maximize your profitability.
           </motion.p>
           <motion.div variants={fadeInUp} className="flex justify-center mb-16">
-            <Button asChild className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
-                              onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+            <Button 
+              className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
+              onClick={toggleCalendly}
             >
-              <Link href="#">
-                Partner with us
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              Partner with us
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </motion.div>
 
@@ -277,20 +307,47 @@ export default function JoinUs() {
             Join our network of successful partners and bring HelmetPro to your community.
           </motion.p>
           <motion.div variants={fadeInUp}>
-            <Button asChild className="bg-white text-blue-600 hover:bg-blue-200 text-lg px-8 py-4"
-              onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+            <Button 
+              className="bg-white text-blue-600 hover:bg-blue-200 text-lg px-8 py-4"
+              onClick={toggleCalendly}
             >
-              <Link href="#">
-                Apply for Partnership
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
+              Apply for Partnership
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
           </motion.div>
         </motion.div>
       </section>
 
-
       <Footer />
+      
+      {/* Calendly Modal */}
+      <AnimatePresence>
+        {showCalendly && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-lg w-full max-w-4xl max-h-screen overflow-auto"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="text-xl font-bold">Schedule a Partnership Consultation</h2>
+                <Button variant="ghost" onClick={toggleCalendly} className="p-1">
+                  <X className="h-6 w-6" />
+                </Button>
+              </div>
+              <div className="p-0">
+                <Calendly url="https://calendly.com/admin-helmetprosolutions/30min" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

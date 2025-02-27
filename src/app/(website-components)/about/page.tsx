@@ -4,11 +4,11 @@ import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
-import {  Zap, Sparkles, CheckCircle, ArrowRight } from "lucide-react"
+import { Zap, Sparkles, CheckCircle, ArrowRight, X } from "lucide-react"
 import { SiteHeader } from "../components/site-header"
-import { motion } from "framer-motion"
+import { motion, AnimatePresence } from "framer-motion"
 import { useInView } from "framer-motion"
-import { ReactNode, useRef } from "react"
+import { ReactNode, useRef, useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
 import Footer from "../components/footer";
 
@@ -16,7 +16,6 @@ interface FadeInViewProps {
   children: ReactNode;
   delay?: number;
 }
-
 
 // Animation wrapper component
 const FadeInView = ({ children, delay = 0 }: FadeInViewProps) => {
@@ -35,10 +34,42 @@ const FadeInView = ({ children, delay = 0 }: FadeInViewProps) => {
   )
 }
 
+// Calendly component
+interface CalendlyProps {
+  url: string;
+}
 
+const Calendly: React.FC<CalendlyProps> = ({ url }) => {
+  useEffect(() => {
+    // Load the Calendly script
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  return (
+    <div className="calendly-inline-widget" 
+      data-url={url}
+      style={{ minWidth: "320px", height: "700px" }}>
+    </div>
+  );
+};
 
 export default function AboutUs() {
   const router = useRouter()
+  const [showCalendly, setShowCalendly] = useState(false)
+  
+  // Function to toggle Calendly modal
+  const toggleCalendly = () => {
+    setShowCalendly(!showCalendly);
+  };
+  
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-10 lg:pt-0">
       <SiteHeader />
@@ -81,8 +112,9 @@ export default function AboutUs() {
               transition={{ duration: 0.8, delay: 0.6 }}
               className="mt-10 flex items-center justify-center gap-x-6"
             >
-              <Button className="rounded-full bg-white px-6 py-5 text-base lg:px-8 lg:py-6 lg:text-lg font-semibold text-blue-600 hover:bg-blue-50"
-               onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+              <Button 
+                className="rounded-full bg-white px-6 py-5 text-base lg:px-8 lg:py-6 lg:text-lg font-semibold text-blue-600 hover:bg-blue-50"
+                onClick={toggleCalendly}
               >
                 Buy Now <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
@@ -178,10 +210,10 @@ export default function AboutUs() {
                           {feature.description}
                         </p>
                         <Button className="rounded-full bg-white px-6 py-5 text-base lg:px-8 lg:py-6 lg:text-lg font-semibold text-blue-600 hover:bg-blue-50"
-               onClick={() => router.push('/products')}
-              >
-                Learn More <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+                          onClick={() => router.push('/products')}
+                        >
+                          Learn More <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
                       </div>
                       <div className="relative aspect-square w-full max-w-xl mx-auto rounded-2xl overflow-hidden shadow-xl">
                         <Image 
@@ -210,10 +242,10 @@ export default function AboutUs() {
                           {feature.description}
                         </p>
                         <Button className="rounded-full bg-white px-6 py-5 text-base lg:px-8 lg:py-6 lg:text-lg font-semibold text-blue-600 hover:bg-blue-50"
-               onClick={() => router.push('/products')}
-              >
-                Learn More <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+                          onClick={() => router.push('/products')}
+                        >
+                          Learn More <ArrowRight className="ml-2 h-5 w-5" />
+                        </Button>
                       </div>
                     </>
                   )}
@@ -236,8 +268,9 @@ export default function AboutUs() {
                 Join thousands of satisfied users who trust HelmetPro for their helmet maintenance needs.
               </p>
               <div className="mt-10 flex justify-center gap-x-6">
-                <Button className="rounded-full bg-white px-8 py-6 text-lg font-semibold text-blue-600 hover:bg-blue-50"
-                 onClick={() => window.open("https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform", "_blank")}
+                <Button 
+                  className="rounded-full bg-white px-8 py-6 text-lg font-semibold text-blue-600 hover:bg-blue-50"
+                  onClick={toggleCalendly}
                 >
                   Get Started Now
                 </Button>
@@ -248,7 +281,36 @@ export default function AboutUs() {
       </FadeInView>
 
       {/* Footer */}
-        <Footer />
+      <Footer />
+      
+      {/* Calendly Modal */}
+      <AnimatePresence>
+        {showCalendly && (
+          <motion.div
+            className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white rounded-lg w-full max-w-4xl max-h-screen overflow-auto"
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+            >
+              <div className="flex justify-between items-center p-4 border-b">
+                <h2 className="text-xl font-bold">Schedule a Meeting</h2>
+                <Button variant="ghost" onClick={toggleCalendly} className="p-1">
+                  <X className="h-6 w-6" />
+                </Button>
+              </div>
+              <div className="p-0">
+                <Calendly url="https://calendly.com/admin-helmetprosolutions/30min" />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }
@@ -270,4 +332,3 @@ const features = [
     description: "Access freshly sanitized helmets in seconds with our smart dispensers. Our streamlined process eliminates waiting and complications, so you can focus on what matters most—enjoying your ride.",
   },
 ]
-

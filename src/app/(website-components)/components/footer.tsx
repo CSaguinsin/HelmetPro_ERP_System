@@ -2,11 +2,42 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { motion } from "framer-motion";
-import { Facebook, Instagram } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Facebook, Instagram, X } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+
+// Calendly component
+interface CalendlyProps {
+  url: string;
+}
+
+const Calendly: React.FC<CalendlyProps> = ({ url }) => {
+  useEffect(() => {
+    // Load the Calendly script
+    const script = document.createElement('script');
+    script.src = 'https://assets.calendly.com/assets/external/widget.js';
+    script.async = true;
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  return (
+    <div className="calendly-inline-widget" 
+      data-url={url}
+      style={{ minWidth: "320px", height: "700px" }}>
+    </div>
+  );
+};
 
 export default function Footer() {
+    const [showCalendly, setShowCalendly] = useState(false);
+    
     const footerLinks = [
         {
             title: "Quick Links",
@@ -15,7 +46,7 @@ export default function Footer() {
                 { name: "About", href: "/about" },
                 { name: "Products", href: "/products" },
                 { name: "Join Us", href: "/join-us" },
-                { name: "Partner With Us", href: "https://docs.google.com/forms/d/e/1FAIpQLSc_isim53g1u6-pYQRLzhk75UUQjFSYdkI9_wYUrgZCABmH8A/viewform" },
+                { name: "Partner With Us", href: "#", isCalendly: true },
                 { name: "Terms & Conditions", href: "/terms" }
             ]
         },
@@ -29,8 +60,19 @@ export default function Footer() {
         },
     ];
 
+    // Function to toggle Calendly modal
+    const toggleCalendly = () => {
+        setShowCalendly(!showCalendly);
+    };
+
+    // Fixed TypeScript error by providing explicit type for the event parameter
+    const handleCalendlyOpen = (e: React.MouseEvent<HTMLAnchorElement>) => {
+        e.preventDefault();
+        setShowCalendly(true);
+    };
+
     return (
-        <footer className="bg-slate-900 text-slate-200 py-12">
+        <footer className="bg-slate-900 text-slate-200 py-12 relative">
             <motion.div className="container max-w-screen-xl mx-auto px-4">
                 <div className="grid md:grid-cols-4 gap-8">
                     <motion.div className="space-y-6">
@@ -69,7 +111,15 @@ export default function Footer() {
                             <ul className="space-y-3">
                                 {section.links.map((link) => (
                                     <motion.li key={link.name} whileHover={{ x: 5 }}>
-                                        {section.title === "Quick Links" ? (
+                                        {link.isCalendly ? (
+                                            <a 
+                                                href="#" 
+                                                className="text-slate-400 hover:text-white"
+                                                onClick={handleCalendlyOpen}
+                                            >
+                                                {link.name}
+                                            </a>
+                                        ) : section.title === "Quick Links" ? (
                                             <Link href={link.href} className="text-slate-400 hover:text-white">
                                                 {link.name}
                                             </Link>
@@ -89,6 +139,35 @@ export default function Footer() {
                     <p className="text-sm">© {new Date().getFullYear()} HelmetPro. All rights reserved.</p>
                 </motion.div>
             </motion.div>
+
+            {/* Calendly Modal */}
+            <AnimatePresence>
+                {showCalendly && (
+                    <motion.div
+                        className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                    >
+                        <motion.div
+                            className="bg-white rounded-lg w-full max-w-4xl max-h-screen overflow-auto"
+                            initial={{ scale: 0.9, y: 20 }}
+                            animate={{ scale: 1, y: 0 }}
+                            exit={{ scale: 0.9, y: 20 }}
+                        >
+                            <div className="flex justify-between items-center p-4 border-b">
+                                <h2 className="text-xl text-black font-bold">Schedule a Meeting</h2>
+                                <Button variant="ghost" onClick={toggleCalendly} className="p-1">
+                                    <X className="h-6 w-6" />
+                                </Button>
+                            </div>
+                            <div className="p-0">
+                                <Calendly url="https://calendly.com/admin-helmetprosolutions/30min" />
+                            </div>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
         </footer>
     )
 }

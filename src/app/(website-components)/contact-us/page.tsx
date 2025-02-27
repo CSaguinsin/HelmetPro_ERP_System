@@ -1,8 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useState } from "react";
-import { Phone, Mail} from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Phone, Mail, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   AlertDialog,
@@ -16,6 +16,54 @@ import Image from "next/image";
 import Footer from "../components/footer";
 import { SiteHeader } from "../components/site-header";
 
+// Create custom tabs component since @/components/ui/tabs is not available
+const TabsContainer = ({ children }: { children: React.ReactNode }) => {
+  return <div className="w-full">{children}</div>;
+};
+
+const TabsList = ({ children, className }: { children: React.ReactNode, className?: string }) => {
+  return <div className={className}>{children}</div>;
+};
+
+const TabsTrigger = ({ 
+  children, 
+  className, 
+  id, 
+  active, 
+  onClick 
+}: { 
+  children: React.ReactNode, 
+  className?: string, 
+  // Removed unused 'value' prop
+  id?: string, 
+  active: boolean,
+  onClick: () => void 
+}) => {
+  return (
+    <button 
+      id={id} 
+      className={`${className} ${active ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white' : ''}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+};
+
+const TabsContent = ({ 
+  children, 
+  className, 
+  value, 
+  activeValue 
+}: { 
+  children: React.ReactNode, 
+  className?: string, 
+  value: string,
+  activeValue: string
+}) => {
+  if (value !== activeValue) return null;
+  return <div className={className}>{children}</div>;
+};
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -34,8 +82,43 @@ export default function ContactSection() {
     message: "",
   });
 
+  const [activeTab, setActiveTab] = useState<string>("form");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showThankYou, setShowThankYou] = useState(false);
+  const [calendlyLoaded, setCalendlyLoaded] = useState(false);
+  const calendlyRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Load Calendly script
+    const script = document.createElement("script");
+    script.src = "https://assets.calendly.com/assets/external/widget.js";
+    script.async = true;
+    script.onload = () => setCalendlyLoaded(true);
+    document.body.appendChild(script);
+
+    return () => {
+      // Clean up
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
+    };
+  }, []);
+
+  // Effect to initialize Calendly when tab is active and script is loaded
+  useEffect(() => {
+    if (activeTab === "schedule" && calendlyLoaded && calendlyRef.current && window.Calendly) {
+      // Clear the container first
+      calendlyRef.current.innerHTML = "";
+      
+      // Initialize Calendly
+      window.Calendly.initInlineWidget({
+        url: "https://calendly.com/admin-helmetprosolutions/30min",
+        parentElement: calendlyRef.current,
+        prefill: {},
+        utm: {}
+      });
+    }
+  }, [activeTab, calendlyLoaded]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -87,11 +170,18 @@ export default function ContactSection() {
       text: "partnerships@helmetprosolutions.com",
       href: "mailto:partnerships@helmetprosolutions.com",
     },
+    {
+      icon: Calendar,
+      text: "Schedule a Call",
+      href: "#schedule",
+      isAction: true,
+      onClick: () => setActiveTab("schedule"),
+    },
   ];
 
-  return(
+  return (
     <>
-    <SiteHeader />
+      <SiteHeader />
       <section id="contact" className="py-16 sm:py-20 md:py-24 lg:py-32 bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white">
         <div className="container mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <motion.div 
@@ -102,10 +192,10 @@ export default function ContactSection() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-cyan-400 mb-3 sm:mb-4">
-              Contact Us
+              Get in Touch
             </h2>
             <p className="text-base sm:text-lg text-gray-300 max-w-2xl mx-auto px-4 sm:px-0">
-              Have questions about our solutions? Reach out directly or fill the form. We are here to help!
+              Have questions about our solutions? Reach out directly, schedule a call, or fill the form. We are here to help!
             </p>
           </motion.div>
 
@@ -119,15 +209,21 @@ export default function ContactSection() {
                 viewport={{ once: true }}
               >
                 <div className="space-y-4 sm:space-y-6">
-                  {contactInfo.map(({ icon: Icon, text, href }) => (
+                  {contactInfo.map(({ icon: Icon, text, href, isAction, onClick }) => (
                     <motion.a
                       key={text}
                       href={href}
-                      className="flex items-center gap-3 sm:gap-4 text-gray-300 hover:text-white transition-colors group"
+                      onClick={(e) => {
+                        if (onClick) {
+                          e.preventDefault();
+                          onClick();
+                        }
+                      }}
+                      className={`flex items-center gap-3 sm:gap-4 text-gray-300 hover:text-white transition-colors group ${isAction ? 'bg-gradient-to-r from-blue-600/20 to-cyan-600/20 p-2 rounded-lg' : ''}`}
                       variants={fadeInUp}
                     >
-                      <div className="p-2 sm:p-3 bg-white/10 rounded-lg group-hover:bg-blue-500 transition-colors">
-                        <Icon size={20} className="text-blue-400 group-hover:text-white sm:w-6 sm:h-6" />
+                      <div className={`p-2 sm:p-3 ${isAction ? 'bg-blue-500' : 'bg-white/10'} rounded-lg group-hover:bg-blue-500 transition-colors`}>
+                        <Icon size={20} className={`${isAction ? 'text-white' : 'text-blue-400'} group-hover:text-white sm:w-6 sm:h-6`} />
                       </div>
                       <span className="text-base sm:text-lg font-medium break-all sm:break-normal">{text}</span>
                     </motion.a>
@@ -162,63 +258,92 @@ export default function ContactSection() {
               whileInView="animate"
               viewport={{ once: true }}
             >
-              <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Full Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.name}
-                    onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
-                    placeholder="John Doe"
-                  />
-                </div>
+              <TabsContainer>
+                <TabsList className="grid grid-cols-2 w-full mb-6 rounded-lg bg-white/10">
+                  <TabsTrigger 
+                    active={activeTab === "form"}
+                    onClick={() => setActiveTab("form")}
+                    className="rounded-md py-2 px-4 font-medium transition-all"
+                  >
+                    Contact Form
+                  </TabsTrigger>
+                  <TabsTrigger 
+                    id="schedule" 
+                    active={activeTab === "schedule"}
+                    onClick={() => setActiveTab("schedule")}
+                    className="rounded-md py-2 px-4 font-medium transition-all"
+                  >
+                    Schedule a Call
+                  </TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="form" activeValue={activeTab} className="mt-0">
+                  <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-6">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Full Name</label>
+                      <input
+                        type="text"
+                        required
+                        value={formData.name}
+                        onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
+                        placeholder="John Doe"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Email Address</label>
-                  <input
-                    type="email"
-                    required
-                    value={formData.email}
-                    onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
-                    placeholder="john@company.com"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Email Address</label>
+                      <input
+                        type="email"
+                        required
+                        value={formData.email}
+                        onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
+                        placeholder="john@company.com"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Phone Number</label>
-                  <input
-                    type="tel"
-                    required
-                    value={formData.phone}
-                    onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
-                    placeholder="+1 234 567 890"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Phone Number</label>
+                      <input
+                        type="tel"
+                        required
+                        value={formData.phone}
+                        onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
+                        placeholder="+1 234 567 890"
+                      />
+                    </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Message</label>
-                  <textarea
-                    rows={4}
-                    required
-                    value={formData.message}
-                    onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
-                    className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
-                    placeholder="How can we help you?"
-                  />
-                </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-300 mb-1 sm:mb-2">Message</label>
+                      <textarea
+                        rows={4}
+                        required
+                        value={formData.message}
+                        onChange={(e) => setFormData(prev => ({ ...prev, message: e.target.value }))}
+                        className="w-full px-3 sm:px-4 py-2 sm:py-3 bg-white/5 border border-white/10 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-white placeholder-gray-400 text-sm sm:text-base"
+                        placeholder="How can we help you?"
+                      />
+                    </div>
 
-                <Button 
-                  type="submit" 
-                  disabled={isSubmitting} 
-                  className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 h-10 sm:h-12 text-sm sm:text-base"
-                >
-                  {isSubmitting ? "Sending..." : "Send Message"}
-                </Button>
-              </form>
+                    <Button 
+                      type="submit" 
+                      disabled={isSubmitting} 
+                      className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 h-10 sm:h-12 text-sm sm:text-base"
+                    >
+                      {isSubmitting ? "Sending..." : "Send Message"}
+                    </Button>
+                  </form>
+                </TabsContent>
+                
+                <TabsContent value="schedule" activeValue={activeTab} className="mt-0 h-[700px]">
+                  <div 
+                    ref={calendlyRef}
+                    className="w-full h-full"
+                  ></div>
+                </TabsContent>
+              </TabsContainer>
             </motion.div>
           </div>
         </div>
@@ -229,7 +354,7 @@ export default function ContactSection() {
           <AlertDialogHeader>
             <div className="flex justify-center">
               <Image
-                src="/helmetpro/logo.jpeg"
+                src="/helmet-pro/logo.jpeg"
                 alt="Logo"
                 width={80}
                 height={80}
@@ -258,4 +383,18 @@ export default function ContactSection() {
       <Footer />
     </>
   );
+}
+
+// Add TypeScript declaration for Calendly
+declare global {
+  interface Window {
+    Calendly?: {
+      initInlineWidget: (options: {
+        url: string;
+        parentElement: HTMLElement;
+        prefill?: Record<string, unknown>;
+        utm?: Record<string, unknown>;
+      }) => void;
+    };
+  }
 }
