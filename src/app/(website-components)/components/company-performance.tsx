@@ -188,7 +188,7 @@ export default function StorePerformance() {
                     />
                   ))}
                 </div>
-                <span className="text-xs text-muted-foreground ml-2">Based on 2,400+ reviews</span>
+                <span className="text-xs text-muted-foreground ml-2">Based on 200+ reviews</span>
               </div>
             </CardContent>
           </MotionCard>
