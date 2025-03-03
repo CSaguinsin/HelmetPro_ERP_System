@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import Script from "next/script";  // Add this import
+import Script from "next/script";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "HelmetPro - Helmet Vendo Cleaning Machine",
-  description: "Next.js application for HelmetPro",
+  description: "HelmetPro Solutions",
 };
 
 export default function RootLayout({
@@ -39,6 +39,13 @@ export default function RootLayout({
             gtag('config', 'G-37QBP6H10E');
           `}
         </Script>
+        
+        {/* CookieYes Banner Script */}
+        <Script
+          id="cookieyes"
+          strategy="afterInteractive"
+          src="https://cdn-cookieyes.com/client_data/6b8fa8c8a60207d84216e631/script.js"
+        />
       </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-screen flex flex-col overflow-x-hidden`}
