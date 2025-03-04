@@ -10,6 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import RevenueCalculator from "@/app/components/RevenueCalculator";
 import Footer from "../components/footer";
 import { useState, useEffect } from "react";
+import { AIChatWidget } from "@/app/components/ai-chat-widget";
 
 const fadeInUp = {
   initial: { opacity: 0, y: 20 },
@@ -60,6 +61,7 @@ export default function JoinUs() {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900">
+          <AIChatWidget primaryColor="#3b82f6" position="bottom-right" />
       <SiteHeader />
 
       {/* Hero Section */}

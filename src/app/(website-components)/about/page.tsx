@@ -11,6 +11,9 @@ import { useInView } from "framer-motion"
 import { ReactNode, useRef, useState, useEffect } from "react"
 import { useRouter } from 'next/navigation'
 import Footer from "../components/footer";
+import { AIChatWidget } from "@/app/components/ai-chat-widget"
+import DTILogo from "../../../../public/DTI.png"
+import FDALogo from "../../../../public/FDA.png"
 
 interface FadeInViewProps {
   children: ReactNode;
@@ -72,6 +75,7 @@ export default function AboutUs() {
   
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-10 lg:pt-0">
+          <AIChatWidget primaryColor="#3b82f6" position="bottom-right" />
       <SiteHeader />
       
       {/* Hero Section with Gradient Background */}
@@ -173,8 +177,13 @@ export default function AboutUs() {
                 Why Choose <span className="text-blue-600">HelmetPro</span>
               </h2>
               <p className="mt-4 text-gray-600 dark:text-gray-400 lg:text-lg">
-                Our innovative approach to helmet care sets new standards in the industry
+                Our innovative vending machines deliver a DTI and FDA-approved cleaning process, ensuring the safety and longevity of your helmets. We utilize only certified, high-quality cleaning materials, guaranteeing a thorough sanitization that meets rigorous standards.
               </p>
+              {/* Added DTI and FDA images below the paragraph */}
+              <div className="mt-8 flex justify-center space-x-8">
+                <Image src={DTILogo} alt="DTI Logo" width={100} height={50} className="h-12 w-auto" />
+                <Image src={FDALogo} alt="FDA Logo" width={100} height={50} className="h-12 w-auto" />
+              </div>
             </div>
           </FadeInView>
           <div className="grid gap-8 md:grid-cols-3">

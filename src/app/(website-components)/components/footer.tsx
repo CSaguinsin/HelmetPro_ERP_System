@@ -7,6 +7,8 @@ import { Facebook, Instagram, X } from "lucide-react";
 import { FaWhatsapp } from "react-icons/fa";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import DTILogo from "../../../../public/DTI.png"
+import FDALogo from "../../../../public/FDA.png"
 
 // Calendly component
 interface CalendlyProps {
@@ -135,8 +137,10 @@ export default function Footer() {
                     ))}
                 </div>
 
-                <motion.div className="border-t border-slate-800 mt-12 pt-8 text-center text-slate-400">
-                    <p className="text-sm">© {new Date().getFullYear()} HelmetPro. All rights reserved.</p>
+                <motion.div className="border-t border-slate-800 mt-12 pt-8 flex items-center justify-center space-x-4">
+                    <Image src={DTILogo} alt="DTI Logo" width={50} height={50} className="h-10 w-auto" />
+                    <p className="text-sm text-slate-400">© {new Date().getFullYear()} HelmetPro. All rights reserved.</p>
+                    <Image src={FDALogo} alt="FDA Logo" width={50} height={50} className="h-10 w-auto" />
                 </motion.div>
             </motion.div>
 

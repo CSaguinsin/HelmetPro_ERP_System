@@ -22,6 +22,8 @@ import { SiteHeader } from "../components/site-header";
 import { ReactNode } from "react"
 import Footer from "../components/footer";
 import { useRouter } from 'next/navigation'
+import { AIChatWidget } from '@/app/components/ai-chat-widget';
+import VideoShowcase from '@/app/components/video-showcase';
 
 // Calendly component from the first file
 interface CalendlyProps {
@@ -122,6 +124,7 @@ export default function ProductPage() {
   
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-gray-900 to-blue-900 pt-10 lg:pt-10">
+          <AIChatWidget primaryColor="#3b82f6" position="bottom-right" />
       <SiteHeader />
       
       {/* Original Hero Section */}
@@ -241,6 +244,8 @@ export default function ProductPage() {
           <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/20 rounded-full filter blur-3xl" />
         </div>
       </section>
+
+      <VideoShowcase />
       
       {/* Features Section */}
       <section className="py-24 relative bg-white">

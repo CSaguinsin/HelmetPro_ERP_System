@@ -6,8 +6,7 @@ import { HowItWorks } from "../app/(website-components)/components/how-it-works"
 import  StorePerformance from "../app/(website-components)/components/company-performance"
 import Footer from "../app/(website-components)/components/footer";
 import { motion } from "framer-motion";
-import { TawkMessenger } from "./components/TawkMessenger";
-
+import { AIChatWidget } from "./components/ai-chat-widget"
 
 const stats = [
   { value: "100+", label: "Locations" },
@@ -21,7 +20,7 @@ const stats = [
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col pt-10 lg:pt-0">
-      <TawkMessenger />
+      <AIChatWidget primaryColor="#3b82f6" position="bottom-right" />
       <SiteHeader />
 
       <main className="flex-1">
