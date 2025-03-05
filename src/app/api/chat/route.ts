@@ -1,35 +1,24 @@
 import { google } from "@ai-sdk/google";
 import { streamText } from "ai";
-import { GoogleSpreadsheet } from "google-spreadsheet";
-import { JWT } from "google-auth-library";
+import { createClient } from "@supabase/supabase-js";
 
 export const maxDuration = 30;
 
+// Create Supabase client
+const supabase = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!, 
+  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+);
+
 // Define interfaces for better type safety
-interface OrderDetails {
-  name: string;
-  email: string;
-  phone?: string;
-  company?: string;
-  address?: string;
-  quantity?: number | string;
-  comments?: string;
-}
 
 interface IntentHandler {
   pattern: RegExp;
-  sections: string[];
+  domains: string[];
 }
 
-// Enhanced context retrieval with semantic chunking and intent detection
-function retrieveRelevantContext(query: string, knowledgeBase: string): string {
-  // Split knowledge base into meaningful chunks based on section headers
-  const chunks = knowledgeBase.split(/(?=\/\/ [A-Z][a-z]+)/g)
-    .map(chunk => chunk.trim())
-    .filter(chunk => chunk.length > 50); // Remove small fragments
-
-  console.log("Total chunks processed:", chunks.length);
-
+// Enhanced context retrieval from Supabase knowledge base
+async function retrieveRelevantContext(query: string): Promise<string> {
   // Pre-process query for better matching
   const cleanQuery = query.toLowerCase()
     .replace(/[^\w\s]/g, '') // Remove punctuation
@@ -38,141 +27,67 @@ function retrieveRelevantContext(query: string, knowledgeBase: string): string {
 
   // Intent handlers with priority order
   const intentHandlers: IntentHandler[] = [
-    { pattern: /price|cost|how much|\$/, sections: ["Product Information"] },
-    { pattern: /about|tell me|what is|company|mission/, sections: ["About", "Product Information"] },
-    { pattern: /technical|spec|dimension|weight|size/, sections: ["Technical Specifications"] },
-    { pattern: /market|country|usage|stat|review/, sections: ["Trusted", "Main Markets"] },
-    { pattern: /order|purchase|buy|where get/, sections: ["Product Information"] }
+    { pattern: /price|cost|how much|\$/, domains: ["Pricing & Offers", "Product Information"] },
+    { pattern: /about|tell me|what is|company|mission/, domains: ["About", "Product Overview"] },
+    { pattern: /technical|spec|dimension|weight|size/, domains: ["Technical Specifications", "Features & Inclusions"] },
+    { pattern: /market|country|usage|stat|review/, domains: ["Trusted", "Main Markets", "Business Partnership & Franchise Model"] },
+    { pattern: /order|purchase|buy|where get/, domains: ["Product Information", "Pricing & Offers"] },
+    { pattern: /shipping|logistics|lead time/, domains: ["Shipping & Logistics"] },
+    { pattern: /maintenance|consumables|filter|bulb/, domains: ["Consumables & Maintenance Costs"] },
+    { pattern: /franchise|distributor|partnership/, domains: ["Business Partnership & Franchise Model", "Exclusivity"] },
+    { pattern: /roi|profit|revenue/, domains: ["ROI Analysis", "Business Partnership & Franchise Model"] },
+    { pattern: /faq|question/, domains: ["Frequently Asked Questions"] }
   ];
 
-  // Check for specific intents first
-  for (const { pattern, sections } of intentHandlers) {
+  // First, try to match intent-specific domains
+  for (const { pattern, domains } of intentHandlers) {
     if (pattern.test(cleanQuery)) {
-      const matchedChunks = chunks.filter(chunk => 
-        sections.some(section => chunk.startsWith(`// ${section}`))
-      );
-      if (matchedChunks.length > 0) {
-        console.log(`Intent matched: ${pattern} - returning ${sections.join(', ')}`);
-        return matchedChunks.join('\n\n');
+      const { data } = await supabase
+        .from('knowledge_base')
+        .select('content')
+        .in('domain', domains)
+        .limit(2);
+
+      if (data && data.length > 0) {
+        console.log(`Intent matched: ${pattern} - returning ${domains.join(', ')}`);
+        return data.map(item => item.content).join('\n\n');
       }
     }
   }
 
-  // Semantic scoring for general queries
-  const queryKeywords = new Set(cleanQuery.split(/\s+/).filter(w => w.length > 2));
+  // Fallback to semantic search if no specific intent matches
+  const queryKeywords = cleanQuery.split(/\s+/).filter(w => w.length > 2);
   
-  const scoredChunks = chunks.map(chunk => {
-    const chunkContent = chunk.toLowerCase();
-    let score = 0;
+  // Use Postgres full-text search
+  const { data } = await supabase
+    .from('knowledge_base')
+    .select('content, domain')
+    .textSearch('content', queryKeywords.join(' & '), {
+      type: 'websearch'
+    })
+    .limit(2);
 
-    // Section priority weighting
-    if (chunk.startsWith("// Product Information")) score += 15;
-    if (chunk.startsWith("// Technical Specifications")) score += 12;
-    if (chunk.startsWith("// About")) score += 10;
-
-    // Keyword matching with proximity bonus
-    Array.from(queryKeywords).forEach(keyword => {
-      const matches = chunkContent.match(new RegExp(`\\b${keyword}\\b`, 'g')) || [];
-      score += matches.length * 5;
-      
-      // Bonus for multiple keyword matches
-      if (matches.length > 1) score += 10;
-    });
-
-    // Full match bonus
-    if (Array.from(queryKeywords).every(k => chunkContent.includes(k))) {
-      score += 20;
-    }
-
-    return { chunk, score };
-  });
-
-  // Select top chunks based on score
-  const relevantChunks = scoredChunks
-    .filter(c => c.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 2)
-    .map(c => c.chunk);
-
-  return relevantChunks.length > 0 
-    ? relevantChunks.join('\n\n')
-    : chunks.slice(0, 2).join('\n\n'); // Fallback to first sections
-}
-
-// Google Sheets integration for order saving
-async function saveOrderToGoogleSheets(orderDetails: OrderDetails): Promise<boolean> {
-  try {
-    if (!process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || 
-        !process.env.GOOGLE_PRIVATE_KEY || 
-        !process.env.GOOGLE_SHEET_ID) {
-      console.error("Missing Google Sheets configuration");
-      return false;
-    }
-    
-    const serviceAccountAuth = new JWT({
-      email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
-      key: process.env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n'),
-      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
-    });
-
-    const doc = new GoogleSpreadsheet(process.env.GOOGLE_SHEET_ID, serviceAccountAuth);
-    await doc.loadInfo();
-    const sheet = doc.sheetsByIndex[0];
-    
-    await sheet.addRow({
-      timestamp: new Date().toISOString(),
-      name: orderDetails.name,
-      email: orderDetails.email,
-      phone: orderDetails.phone || '',
-      company: orderDetails.company || '',
-      address: orderDetails.address || '',
-      quantity: orderDetails.quantity || '',
-      comments: orderDetails.comments || ''
-    });
-    
-    console.log("Order saved successfully");
-    return true;
-  } catch (error) {
-    console.error("Sheets save error:", error);
-    return false;
+  if (data && data.length > 0) {
+    console.log(`Semantic search results for keywords: ${queryKeywords.join(', ')}`);
+    return data.map(item => 
+      `// Domain: ${item.domain}\n${item.content}`
+    ).join('\n\n');
   }
-}
 
-// Order details extraction
-function extractOrderDetails(message: string): OrderDetails | null {
-  const details: Partial<OrderDetails> = {};
-  const fields: Record<keyof OrderDetails, string[]> = {
-    'name': ['name', 'full name'],
-    'email': ['email'],
-    'phone': ['phone', 'contact number'],
-    'company': ['company', 'business'],
-    'address': ['address', 'shipping'],
-    'quantity': ['quantity'],
-    'comments': ['comments', 'notes']
-  };
+  // If no results, fetch top 2 general domains
+  const { data: defaultData } = await supabase
+    .from('knowledge_base')
+    .select('content, domain')
+    .in('domain', ['Product Overview', 'Pricing & Offers'])
+    .limit(2);
 
-  message.split('\n').forEach(line => {
-    const [keyPart, ...valueParts] = line.split(':');
-    const value = valueParts.join(':').trim();
-    
-    Object.entries(fields).forEach(([field, keywords]) => {
-      if (keywords.some(k => keyPart?.toLowerCase().includes(k))) {
-        details[field as keyof OrderDetails] = value;
-      }
-    });
-  });
+  if (defaultData && defaultData.length > 0) {
+    return defaultData.map(item => 
+      `// Domain: ${item.domain}\n${item.content}`
+    ).join('\n\n');
+  }
 
-  return (details.name && details.email) ? details as OrderDetails : null;
-}
-
-// Order form detection
-function isOrderFormSubmission(message: string): boolean {
-  const requiredFields = ['name', 'email', 'phone|address'];
-  return requiredFields.every(field => 
-    field.split('|').some(f => 
-      new RegExp(`${f}:`, 'i').test(message)
-    )
-  );
+  return "No relevant information found in the knowledge base.";
 }
 
 // Enhanced system prompt construction
@@ -207,8 +122,9 @@ export async function POST(req: Request) {
     // Validate required environment variables
     const requiredEnv = [
       'GEMINI_API_KEY', 
-      'HELMETPRO_KNOWLEDGE_BASE',
-      'HELMETPRO_SYSTEM_PROMPT_BASE'
+      'HELMETPRO_SYSTEM_PROMPT_BASE',
+      'NEXT_PUBLIC_SUPABASE_URL',
+      'NEXT_PUBLIC_SUPABASE_ANON_KEY'
     ];
     requiredEnv.forEach(varName => {
       if (!process.env[varName]) throw new Error(`Missing ${varName}`);
@@ -219,26 +135,9 @@ export async function POST(req: Request) {
       process.env.GOOGLE_GENERATIVE_AI_API_KEY = process.env.GEMINI_API_KEY!;
     }
 
-    // Context retrieval
-    const context = retrieveRelevantContext(userMessage, process.env.HELMETPRO_KNOWLEDGE_BASE!);
+    // Context retrieval from Supabase
+    const context = await retrieveRelevantContext(userMessage);
     console.log("Selected context:", context.slice(0, 150) + "...");
-
-    // Order form handling
-    if (isOrderFormSubmission(userMessage)) {
-      const orderDetails = extractOrderDetails(userMessage);
-      if (orderDetails) {
-        const success = await saveOrderToGoogleSheets(orderDetails);
-        return streamText({
-          model: google("gemini-1.5-pro"),
-          messages: [{
-            role: "system",
-            content: success 
-              ? "Confirm order submission and mention email follow-up"
-              : "Apologize and suggest alternative contact methods"
-          }]
-        }).toDataStreamResponse();
-      }
-    }
 
     // Build AI prompt
     const isOrderIntent = /order|purchase|buy/i.test(userMessage);

@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useRef } from "react"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent } from "@/components/ui/card"
 import { Play, Pause, Maximize, Volume2, VolumeX, Loader2 } from "lucide-react"
@@ -74,31 +74,46 @@ function VideoPlayer({ src, title, description }: VideoPlayerProps) {
   const [currentTime, setCurrentTime] = useState("0:00")
   const [duration, setDuration] = useState("0:00")
   const [isLoading, setIsLoading] = useState(true)
+  const [showControls, setShowControls] = useState(true)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null)
 
   const handlePlayPause = () => {
-    const video = document.getElementById(src) as HTMLVideoElement
+    if (!videoRef.current) return
+
     if (isPlaying) {
-      video.pause()
+      videoRef.current.pause()
+      setIsPlaying(false)
+      setShowControls(true)
     } else {
-      video.play()
+      videoRef.current.play()
+      setIsPlaying(true)
+      setShowControls(false)
     }
-    setIsPlaying(!isPlaying)
   }
 
   const handleMute = () => {
-    const video = document.getElementById(src) as HTMLVideoElement
-    video.muted = !isMuted
+    if (!videoRef.current) return
+    videoRef.current.muted = !isMuted
     setIsMuted(!isMuted)
   }
 
   const handleFullscreen = () => {
-    const videoContainer = document.getElementById(`container-${src}`)
-    if (videoContainer) {
-      if (document.fullscreenElement) {
-        document.exitFullscreen()
-      } else {
-        videoContainer.requestFullscreen()
-      }
+    if (!containerRef.current) return
+
+    if (document.fullscreenElement) {
+      document.exitFullscreen()
+    } else {
+      containerRef.current.requestFullscreen()
+    }
+  }
+
+  const handleVideoClick = () => {
+    // Toggle controls and play/pause on video click
+    if (isPlaying) {
+      handlePlayPause()
+    } else {
+      handlePlayPause()
     }
   }
 
@@ -123,17 +138,21 @@ function VideoPlayer({ src, title, description }: VideoPlayerProps) {
   }
 
   const handleProgressClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!videoRef.current) return
     const progressBar = e.currentTarget
     const rect = progressBar.getBoundingClientRect()
     const pos = (e.clientX - rect.left) / rect.width
-    const video = document.getElementById(src) as HTMLVideoElement
-    video.currentTime = pos * video.duration
+    videoRef.current.currentTime = pos * videoRef.current.duration
   }
 
   return (
     <Card className="overflow-hidden bg-white/10 border-none shadow-xl rounded-2xl backdrop-blur-sm hover:shadow-2xl transition-shadow">
       <CardContent className="p-0">
-        <div id={`container-${src}`} className="relative">
+        <div 
+          ref={containerRef}
+          id={`container-${src}`} 
+          className="relative"
+        >
           {/* Video Loading Spinner */}
           {isLoading && (
             <div className="absolute inset-0 flex items-center justify-center bg-black/50">
@@ -143,20 +162,41 @@ function VideoPlayer({ src, title, description }: VideoPlayerProps) {
 
           {/* Video Element */}
           <video
+            ref={videoRef}
             id={src}
             className="w-full aspect-video object-contain rounded-t-2xl"
             src={src}
             onTimeUpdate={handleTimeUpdate}
             onLoadedMetadata={handleLoadedMetadata}
-            onEnded={() => setIsPlaying(false)}
+            onEnded={() => {
+              setIsPlaying(false)
+              setShowControls(true)
+            }}
+            onClick={handleVideoClick}
             playsInline
           />
 
           {/* Video Info Overlay */}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex flex-col justify-end p-6 opacity-100 transition-opacity duration-300 hover:opacity-100">
+          <div 
+            className={`
+              absolute inset-0 bg-gradient-to-t from-black/70 to-transparent 
+              flex flex-col justify-end p-6 
+              transition-opacity duration-300
+              ${(isPlaying && !showControls) ? 'opacity-0' : 'opacity-100'}
+            `}
+          >
             <h3 className="text-xl md:text-2xl font-bold text-white mb-2">{title}</h3>
             <p className="text-white/80 mb-4 max-w-2xl">{description}</p>
+          </div>
 
+          {/* Controls Overlay */}
+          <div 
+            className={`
+              absolute inset-x-0 bottom-0 p-4
+              transition-opacity duration-300
+              ${(isPlaying && !showControls) ? 'opacity-0' : 'opacity-100'}
+            `}
+          >
             {/* Progress Bar */}
             <div className="w-full h-1.5 bg-white/30 rounded-full mb-4 cursor-pointer" onClick={handleProgressClick}>
               <div className="h-full bg-white rounded-full" style={{ width: `${progress}%` }} />
@@ -167,7 +207,7 @@ function VideoPlayer({ src, title, description }: VideoPlayerProps) {
               <div className="flex items-center gap-4">
                 <button
                   onClick={handlePlayPause}
-                  className="text-white hover:text-white/80 transition-colors"
+                  className="text-white hover:text-white/80 transition-colors z-10 relative"
                   aria-label={isPlaying ? "Pause" : "Play"}
                 >
                   {isPlaying ? <Pause className="h-6 w-6" /> : <Play className="h-6 w-6" />}
@@ -175,7 +215,7 @@ function VideoPlayer({ src, title, description }: VideoPlayerProps) {
 
                 <button
                   onClick={handleMute}
-                  className="text-white hover:text-white/80 transition-colors"
+                  className="text-white hover:text-white/80 transition-colors z-10 relative"
                   aria-label={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted ? <VolumeX className="h-6 w-6" /> : <Volume2 className="h-6 w-6" />}
@@ -188,7 +228,7 @@ function VideoPlayer({ src, title, description }: VideoPlayerProps) {
 
               <button
                 onClick={handleFullscreen}
-                className="text-white hover:text-white/80 transition-colors"
+                className="text-white hover:text-white/80 transition-colors z-10 relative"
                 aria-label="Fullscreen"
               >
                 <Maximize className="h-6 w-6" />
