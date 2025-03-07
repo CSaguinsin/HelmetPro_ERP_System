@@ -51,26 +51,30 @@ export default function DemoPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
         <LoadingDots color="#3B82F6" size={8} speed={0.5} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+      {/* Sidebar */}
       <div className="hidden lg:flex">
         <Sidebar />
       </div>
 
+      {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+          {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900">Set Site Info</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Set Site Info</h1>
             <div className="flex items-center space-x-4">
+              {/* Mobile Sidebar Toggle */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="lg:hidden">
+                  <Button variant="outline" size="icon" className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Toggle sidebar</span>
                   </Button>
@@ -79,60 +83,67 @@ export default function DemoPage() {
                   <Sidebar />
                 </SheetContent>
               </Sheet>
-              <Button>
+              {/* Search Button */}
+              <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
                 <Search className="mr-2 h-4 w-4" /> Search
               </Button>
             </div>
           </div>
 
-          <Card className="mb-6">
+          {/* Filters & Actions Card */}
+          <Card className="mb-6 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Filters & Actions</CardTitle>
+              <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">Filters & Actions</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-4">
+              {/* Filters Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <Select
                   value={filters.siteType}
                   onValueChange={(value) => setFilters({ ...filters, siteType: value })}
                 >
-                  <SelectTrigger>
+                  <SelectTrigger className="bg-gray-50 dark:bg-gray-700">
                     <SelectValue placeholder="Site Type" />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="type1">Type 1</SelectItem>
-                    <SelectItem value="type2">Type 2</SelectItem>
+                  <SelectContent className="bg-white dark:bg-gray-700">
+                    <SelectItem value="type1" className="hover:bg-gray-100 dark:hover:bg-gray-600">Type 1</SelectItem>
+                    <SelectItem value="type2" className="hover:bg-gray-100 dark:hover:bg-gray-600">Type 2</SelectItem>
                   </SelectContent>
                 </Select>
                 <Input
                   placeholder="Site Number"
                   value={filters.siteNumber}
                   onChange={(e) => setFilters({ ...filters, siteNumber: e.target.value })}
+                  className="bg-gray-50 dark:bg-gray-700"
                 />
                 <Input
                   placeholder="Site Name"
                   value={filters.siteName}
                   onChange={(e) => setFilters({ ...filters, siteName: e.target.value })}
+                  className="bg-gray-50 dark:bg-gray-700"
                 />
                 <Input
                   placeholder="Device Code"
                   value={filters.deviceCode}
                   onChange={(e) => setFilters({ ...filters, deviceCode: e.target.value })}
+                  className="bg-gray-50 dark:bg-gray-700"
                 />
               </div>
+              {/* Action Buttons */}
               <div className="flex flex-wrap gap-4">
-                <Button variant="default">
+                <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-700 dark:hover:bg-blue-800 transition-colors">
                   <Search className="mr-2 h-4 w-4" /> Inquiry
                 </Button>
-                <Button variant="secondary">Reset</Button>
+                <Button variant="secondary" className="hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">Reset</Button>
                 <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
                   <DialogTrigger asChild>
-                    <Button variant="outline">
+                    <Button className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 transition-colors">
                       <Plus className="mr-2 h-4 w-4" /> New Site Info
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className="max-w-2xl">
+                  <DialogContent className="max-w-2xl bg-white dark:bg-gray-800">
                     <DialogHeader>
-                      <DialogTitle>New Site Information</DialogTitle>
+                      <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">New Site Information</DialogTitle>
                     </DialogHeader>
                     <AddSiteInfo onClose={() => setIsModalOpen(false)} />
                   </DialogContent>
@@ -141,9 +152,10 @@ export default function DemoPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* Site Information Table */}
+          <Card className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader>
-              <CardTitle>Site Information</CardTitle>
+              <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">Site Information</CardTitle>
             </CardHeader>
             <CardContent>
               <DataTable columns={columns} data={data} /> {/* ✅ Corrected type */}

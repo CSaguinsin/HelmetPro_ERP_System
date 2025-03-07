@@ -10,7 +10,6 @@ import DeviceEndateCard from "../../components/DeviceEndateCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { LoadingDots } from "../../components/loading-dots";
 
-
 // ✅ Type Definitions
 type Device = {
   device_id: string;
@@ -21,7 +20,6 @@ type Device = {
 };
 
 export default function DashboardPage() {
-  const userName = "John Doe"; // Replace with actual user data
   const router = useRouter();
   const [loading, setLoading] = useState<boolean>(true);
   const [userClientId, setUserClientId] = useState<string | null>(null);
@@ -100,14 +98,14 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
         <LoadingDots color="#3B82F6" size={8} speed={0.5} />
       </div>
     );
   }
 
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-100 dark:bg-gray-900">
+    <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
       {/* Sidebar */}
       <div className="hidden lg:flex">
         <Sidebar />
@@ -117,9 +115,10 @@ export default function DashboardPage() {
       <div className="flex-1 overflow-auto">
         <main className="p-4 md:p-6 lg:p-8">
           <div className="space-y-6">
+            {/* Header */}
             <div className="flex items-center justify-between">
-              <h2 className="text-2xl md:text-3xl font-bold tracking-tight">
-                Welcome back, {userName}
+              <h2 className="text-2xl md:text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+                Welcome!
               </h2>
             </div>
 
@@ -128,28 +127,28 @@ export default function DashboardPage() {
               <DeviceStateCard />
               <OperatingStatusCard />
               <DeviceEndateCard />
-              <Card>
+              <Card className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium">Total Devices</CardTitle>
+                  <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Devices</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-2xl font-bold">{devices.length}</div>
-                  <p className="text-xs text-muted-foreground">+20.1% from last month</p>
+                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{devices.length}</div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">+20.1% from last month</p>
                 </CardContent>
               </Card>
             </div>
 
             {/* Device List */}
-            <div className="mt-6 p-4 bg-white dark:bg-gray-800 rounded-lg shadow-md">
-              <h3 className="text-lg font-semibold mb-2">Your Vending Machines</h3>
+            <div className="mt-6 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+              <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Your Vending Machines</h3>
               {devices.length > 0 ? (
-                <ul>
+                <ul className="space-y-4">
                   {devices.map((device) => (
-                    <li key={device.device_id} className="p-2 border-b border-gray-300 dark:border-gray-700">
-                      <p className="text-sm font-medium">Device Name: {device.device_name}</p>
-                      <p className="text-xs text-muted-foreground">Status: {device.device_status}</p>
-                      <p className="text-xs text-muted-foreground">Protocol: {device.protocol_type}</p>
-                      <p className="text-xs text-muted-foreground">Customer: {device.customer_nan}</p>
+                    <li key={device.device_id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white">Device Name: {device.device_name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Status: {device.device_status}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Protocol: {device.protocol_type}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">Customer: {device.customer_nan}</p>
                     </li>
                   ))}
                 </ul>
