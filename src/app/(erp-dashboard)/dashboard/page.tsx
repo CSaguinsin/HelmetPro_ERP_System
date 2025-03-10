@@ -17,6 +17,7 @@ type Device = {
   device_status: string;
   protocol_type: string;
   customer_nan: string;
+  is_mobile_logged_in?: boolean;
 };
 
 export default function DashboardPage() {
@@ -33,12 +34,24 @@ export default function DashboardPage() {
       try {
         const { data, error } = await supabase
           .from("device_list")
-          .select("device_id, device_name, device_status, protocol_type, customer_nan")
+          .select(`
+            device_id, 
+            device_name, 
+            device_status, 
+            protocol_type, 
+            customer_nan,
+            mobile_sessions:mobile_sessions!inner(is_active)
+          `)
           .eq("user_client_id", userClientId);
 
         if (error) throw error;
 
-        setDevices(data || []);
+        const devicesWithStatus = data.map(device => ({
+          ...device,
+          is_mobile_logged_in: device.mobile_sessions.some(session => session.is_active)
+        }));
+
+        setDevices(devicesWithStatus || []);
       } catch (err) {
         console.error("Error fetching devices:", err);
       }
@@ -141,20 +154,28 @@ export default function DashboardPage() {
             {/* Device List */}
             <div className="mt-6 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Your Vending Machines</h3>
-              {devices.length > 0 ? (
-                <ul className="space-y-4">
-                  {devices.map((device) => (
-                    <li key={device.device_id} className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors duration-300">
-                      <p className="text-sm font-medium text-gray-900 dark:text-white">Device Name: {device.device_name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Status: {device.device_status}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Protocol: {device.protocol_type}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">Customer: {device.customer_nan}</p>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500 dark:text-gray-400">No devices found.</p>
-              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {devices.map((device) => (
+                  <div 
+                    key={device.device_id} 
+                    className={`card relative p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer ${
+                      device.is_mobile_logged_in ? 'border-2 border-green-500' : 'border border-gray-200'
+                    }`}
+                    onClick={() => router.push(`/dashboard/machine-images/${device.device_id}`)}
+                  >
+                    {device.is_mobile_logged_in && (
+                      <div className="absolute top-2 right-2 flex items-center space-x-1">
+                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                        <span className="text-xs text-green-600">Mobile Active</span>
+                      </div>
+                    )}
+                    <h3 className="text-lg font-semibold">{device.device_name}</h3>
+                    <p className="text-sm text-gray-600">Status: {device.device_status}</p>
+                    <p className="text-sm text-gray-600">Protocol: {device.protocol_type}</p>
+                    <p className="text-sm text-gray-600">Customer: {device.customer_nan}</p>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </main>

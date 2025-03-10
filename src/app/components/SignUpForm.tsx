@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
+import { v4 as uuidv4 } from "uuid";
 
 interface SignUpFormProps {
   switchToLogin: () => void;
@@ -22,22 +23,61 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
-
+  
     try {
-      const { error } = await supabase.auth.signUp({
+      // Step 1: Sign up the user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
       });
-
-      if (error) {
+  
+      if (authError) {
         toast({
           variant: "destructive",
           title: "Signup failed",
-          description: error.message,
+          description: authError.message,
         });
         return;
       }
-
+  
+      // Step 2: Generate a user_client_id
+      const userClientId = uuidv4();
+  
+      // Step 3: Insert into both users and user_clients tables
+      if (authData.user) {
+        // Insert into users table
+        const { error: userError } = await supabase
+          .from("users")
+          .insert([
+            {
+              user_client_id: userClientId,
+              erp_user_id: authData.user.id,
+              email: authData.user.email,
+              password: password,
+            },
+          ]);
+  
+        if (userError) {
+          throw userError;
+        }
+  
+        // Insert into user_clients table
+        const { error: userClientError } = await supabase
+          .from("user_clients")
+          .insert([
+            {
+              user_client_id: userClientId,
+              erp_user_id: authData.user.id,
+              email: authData.user.email,
+              password: password,
+            },
+          ]);
+  
+        if (userClientError) {
+          throw userClientError;
+        }
+      }
+  
       toast({
         title: "Signup successful",
         description: "Please check your email to verify your account.",
