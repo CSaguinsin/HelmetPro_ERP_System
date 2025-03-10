@@ -24,6 +24,8 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import { supabase } from "@/lib/supabase"
+import { useRouter } from "next/navigation"
+import { toast } from "@/hooks/use-toast"
 
 type FileWithPreview = {
   id: string
@@ -38,6 +40,8 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
   const [videoAd, setVideoAd] = useState<FileWithPreview | null>(null)
   const [companyImages, setCompanyImages] = useState<FileWithPreview[]>([])
   const [activeTab, setActiveTab] = useState("all")
+  const router = useRouter()
+  const [isSaving, setIsSaving] = useState(false)
 
   const handleUpload = async (file: File, type: "logo" | "video" | "image") => {
     const filePath = `media/${deviceId}/${file.name}`
@@ -153,6 +157,60 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
   const totalUploads = getUploadCount()
   const completedUploads = getCompleteCount()
   const uploadProgress = totalUploads ? Math.round((completedUploads / totalUploads) * 100) : 0
+
+  const handleSaveAndContinue = async () => {
+    try {
+      setIsSaving(true)
+      
+      // Get all uploaded media files
+      const { data: mediaFiles, error: mediaError } = await supabase
+        .from('media_files')
+        .select('*')
+        .eq('device_id', deviceId)
+
+      if (mediaError) throw mediaError
+
+      // Verify all required media types are present
+      const hasLogo = mediaFiles.some(file => file.file_type === 'logo')
+      const hasVideo = mediaFiles.some(file => file.file_type === 'video')
+      const hasImages = mediaFiles.some(file => file.file_type === 'image')
+
+      if (!hasLogo || !hasVideo || !hasImages) {
+        toast({
+          title: "Missing Required Media",
+          description: "Please upload all required media types: logo, video, and at least one image.",
+          variant: "destructive"
+        })
+        return
+      }
+
+      // Update device status to indicate media is configured
+      const { error: updateError } = await supabase
+        .from('device_list')
+        .update({ media_configured: true })
+        .eq('device_id', deviceId)
+
+      if (updateError) throw updateError
+
+      toast({
+        title: "Success",
+        description: "Media files have been saved successfully.",
+      })
+
+      // Redirect back to dashboard
+      router.push('/dashboard')
+
+    } catch (error) {
+      console.error('Error saving media:', error)
+      toast({
+        title: "Error",
+        description: "Failed to save media files. Please try again.",
+        variant: "destructive"
+      })
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
@@ -517,8 +575,25 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
 
           {/* Action Buttons */}
           <div className="flex justify-end gap-4 mt-8">
-            <Button variant="outline">Cancel</Button>
-            <Button disabled={totalUploads === 0 || completedUploads !== totalUploads}>Save & Continue</Button>
+            <Button 
+              variant="outline" 
+              onClick={() => router.push('/dashboard')}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSaveAndContinue}
+              disabled={totalUploads === 0 || completedUploads !== totalUploads || isSaving}
+            >
+              {isSaving ? (
+                <>
+                  <span className="animate-spin mr-2">⏳</span>
+                  Saving...
+                </>
+              ) : (
+                'Save & Continue'
+              )}
+            </Button>
           </div>
         </div>
       </main>
