@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
 import { v4 as uuidv4 } from "uuid";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface SignUpFormProps {
   switchToLogin: () => void;
@@ -19,6 +25,7 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
@@ -82,7 +89,7 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
         title: "Signup successful",
         description: "Please check your email to verify your account.",
       });
-      switchToLogin();
+      setIsVerificationModalOpen(true);
     } catch (error) {
       console.error("Signup error:", error);
       toast({
@@ -96,59 +103,83 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
   }
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
-      <div className="space-y-4">
-        <div>
-          <Label htmlFor="email">Email address</Label>
-          <Input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            placeholder="you@example.com"
-          />
-        </div>
-
-        <div>
-          <Label htmlFor="password">Password</Label>
-          <div className="relative">
+    <>
+      <form onSubmit={onSubmit} className="space-y-6">
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="email">Email address</Label>
             <Input
-              id="password"
-              type={showPassword ? "text" : "password"}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
-              placeholder="Enter your password"
+              placeholder="you@example.com"
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 flex items-center pr-3"
-            >
-              {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
-            </button>
+          </div>
+
+          <div>
+            <Label htmlFor="password">Password</Label>
+            <div className="relative">
+              <Input
+                id="password"
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                placeholder="Enter your password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-0 flex items-center pr-3"
+              >
+                {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
 
-      <Button type="submit" className="w-full" disabled={isLoading}>
-        {isLoading ? (
-          <>
-            <Loader className="animate-spin -ml-1 mr-3 h-5 w-5" />
-            Signing up...
-          </>
-        ) : (
-          "Sign up"
-        )}
-      </Button>
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <>
+              <Loader className="animate-spin -ml-1 mr-3 h-5 w-5" />
+              Signing up...
+            </>
+          ) : (
+            "Sign up"
+          )}
+        </Button>
 
-      <p className="text-sm text-gray-600 text-center">
-        Already have an account?{" "}
-        <a href="#" onClick={(e) => { e.preventDefault(); switchToLogin(); }} className="font-medium text-blue-600 hover:underline">
-          Log in
-        </a>
-      </p>
-    </form>
+        <p className="text-sm text-gray-600 text-center">
+          Already have an account?{" "}
+          <a href="#" onClick={(e) => { e.preventDefault(); switchToLogin(); }} className="font-medium text-blue-600 hover:underline">
+            Log in
+          </a>
+        </p>
+      </form>
+
+      <Dialog open={isVerificationModalOpen} onOpenChange={setIsVerificationModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Verify Your Email</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-gray-600">
+              We&apos;ve sent a verification email to {email}. Please check your inbox and click the link to verify your account.
+            </p>
+            <Button 
+              className="w-full" 
+              onClick={() => {
+                setIsVerificationModalOpen(false);
+                switchToLogin();
+              }}
+            >
+              Got it!
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
