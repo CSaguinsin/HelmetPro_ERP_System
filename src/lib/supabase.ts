@@ -12,5 +12,10 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true
+  },
+  global: {
+    headers: {
+      'x-application-origin': process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+    }
   }
 })

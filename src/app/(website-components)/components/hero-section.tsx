@@ -117,17 +117,6 @@ export function HeroSection() {
         </div>
         
         <div className="relative mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <header className="absolute top-0 left-0 w-full z-10 py-6">
-            <div className="flex items-center justify-between">
-              <div className="text-white font-bold text-xl">HelmetPro</div>
-              <div className="flex items-center space-x-1">
-                <Button variant="ghost" className="text-white hover:bg-white/10">Features</Button>
-                <Button variant="ghost" className="text-white hover:bg-white/10">Pricing</Button>
-                <Button variant="ghost" className="text-white hover:bg-white/10">About</Button>
-                <Button variant="outline" className="text-white border-white/20 hover:bg-white/10">Login</Button>
-              </div>
-            </div>
-          </header>
                     
           <motion.div 
             className="py-32 flex flex-col items-center text-center relative z-10"

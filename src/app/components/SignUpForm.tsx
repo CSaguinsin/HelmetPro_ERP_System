@@ -32,10 +32,13 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
     setIsLoading(true);
   
     try {
-      // Step 1: Sign up the user with Supabase Auth
+      // Step 1: Sign up the user with Supabase Auth - with redirect to the deployed site
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+        }
       });
   
       if (authError) {
@@ -166,7 +169,7 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              We&apos;ve sent a verification email to {email}. Please check your inbox and click the link to verify your account.
+              We&apos;ve sent a verification email to {email}. Please check your inbox (and spam folder) and click the link to verify your account.
             </p>
             <Button 
               className="w-full" 
