@@ -16,6 +16,11 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "HelmetPro - Helmet Vendo Cleaning Machine",
   description: "HelmetPro Solutions",
+  icons: {
+    icon: "/helmetproweblogo.jpg",
+    shortcut: "/helmetproweblogo.jpg",
+    apple: "/helmetproweblogo.jpg",
+  },
 };
 
 export default function RootLayout({
