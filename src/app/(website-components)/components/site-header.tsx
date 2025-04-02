@@ -130,7 +130,7 @@ export function SiteHeader() {
                   </motion.div>
                 ))}
                 <div className="flex flex-col w-3/4 gap-4">
-                  <Button 
+                  {/* <Button 
                     variant="ghost" 
                     onClick={() => {
                       router.push('/authentication')
@@ -139,7 +139,7 @@ export function SiteHeader() {
                     className="text-white hover:text-blue-400"
                   >
                     LogIn
-                  </Button>
+                  </Button> */}
                   <Button 
                     className="bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
                     onClick={() => {
