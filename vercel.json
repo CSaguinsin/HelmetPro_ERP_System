@@ -9,5 +9,8 @@
         }
       ]
     }
-  ]
+  ],
+  "buildCommand": "chmod +x build.sh && ./build.sh",
+  "installCommand": "npm install --legacy-peer-deps",
+  "framework": "nextjs"
 } 
