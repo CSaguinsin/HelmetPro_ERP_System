@@ -16,5 +16,11 @@
   "outputDirectory": ".next",
   "env": {
     "NEXT_PUBLIC_API_URL": "/api"
+  },
+  "functions": {
+    "src/app/api/docs/route.ts": {
+      "memory": 512,
+      "maxDuration": 5
+    }
   }
 } 

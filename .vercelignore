@@ -1,0 +1,18 @@
+# Exclude large files and development artifacts
+.git
+.next/cache
+node_modules/swagger-ui-dist
+public/video/*.mp4
+
+# Cache directories
+.next/cache/webpack
+.next/cache/images
+
+# Source maps (not needed in production)
+**/*.js.map
+**/*.css.map
+
+# Dev files
+.vscode
+.idea
+*.log 

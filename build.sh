@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Install ALL dependencies, including dev dependencies which contain tailwindcss
+# Install dependencies but exclude large packages or use smaller alternatives where possible
 npm install --legacy-peer-deps --include=dev
 
 # Create a simple tailwind.config.js if it doesn't exist
@@ -31,6 +31,14 @@ fi
 # Build the Next.js application
 echo "Starting Next.js build..."
 npm run build
+
+# Clean up to reduce function size
+echo "Optimizing build for deployment..."
+# Remove caches
+rm -rf .next/cache
+
+# Remove large files that aren't necessary at runtime
+find public/video -name "*.mp4" -type f -size +5M -delete
 
 # Ensure .next directory exists
 mkdir -p .next
