@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import SwaggerUI from "swagger-ui-react";
+import dynamic from 'next/dynamic';
 import "swagger-ui-react/swagger-ui.css";
 
-// Define a more specific type for the Swagger specification
-type SwaggerSpec = {
+// Dynamically import SwaggerUI to avoid SSR issues
+const SwaggerUI = dynamic(() => import('swagger-ui-react'), { ssr: false });
+
+// Define proper type for Swagger spec
+interface SwaggerSpec {
   openapi?: string;
   swagger?: string;
   info?: {
@@ -16,16 +19,20 @@ type SwaggerSpec = {
   paths?: Record<string, unknown>;
   components?: Record<string, unknown>;
   [key: string]: unknown;
-};
+}
 
 export default function ApiDocs() {
   const [spec, setSpec] = useState<SwaggerSpec | null>(null);
 
   useEffect(() => {
     async function fetchSpecs() {
-      const response = await fetch("/api/docs");
-      const data = await response.json();
-      setSpec(data);
+      try {
+        const response = await fetch("/api/docs");
+        const data = await response.json();
+        setSpec(data);
+      } catch (error) {
+        console.error("Failed to load API specifications:", error);
+      }
     }
     
     fetchSpecs();
