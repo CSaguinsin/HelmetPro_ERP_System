@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
+const path = require('path');
+
 const nextConfig = {
   /* config options here */
   env: {
@@ -9,7 +11,12 @@ const nextConfig = {
     // Empty for now since we're not using external packages
   },
   // Use this instead of the deprecated serverComponentsExternalPackages
-  serverExternalPackages: []
+  serverExternalPackages: [],
+  // Explicitly define webpack config to ensure path aliases work
+  webpack: (config) => {
+    config.resolve.alias['@'] = path.join(__dirname, 'src');
+    return config;
+  }
 };
 
 module.exports = nextConfig; 

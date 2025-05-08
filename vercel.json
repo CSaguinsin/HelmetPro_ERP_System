@@ -11,6 +11,10 @@
     }
   ],
   "buildCommand": "chmod +x build.sh && ./build.sh",
-  "installCommand": "npm install --legacy-peer-deps",
-  "framework": "nextjs"
+  "installCommand": "npm install --legacy-peer-deps --include=dev",
+  "framework": "nextjs",
+  "outputDirectory": ".next",
+  "env": {
+    "NEXT_PUBLIC_API_URL": "/api"
+  }
 } 
