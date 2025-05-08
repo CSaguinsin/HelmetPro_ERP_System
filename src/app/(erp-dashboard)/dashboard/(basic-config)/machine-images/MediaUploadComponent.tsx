@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Card, CardHeader, CardTitle, CardContent, CardDescription, CardFooter } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,6 +26,7 @@ import {
 import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
+import { useAuth } from "@/lib/auth-context"
 
 type FileWithPreview = {
   id: string
@@ -42,6 +43,7 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
   const [activeTab, setActiveTab] = useState("all")
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
+  const { user } = useAuth()
 
   const handleUpload = async (file: File, type: "logo" | "video" | "image") => {
     const filePath = `media/${deviceId}/${file.name}`
@@ -211,6 +213,34 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
       setIsSaving(false)
     }
   }
+
+  useEffect(() => {
+    const fetchDeviceInfo = async () => {
+      try {
+        // Use the authenticated user from our custom auth context
+        if (!user || !user.user_client_id) {
+          throw new Error("User not authenticated")
+        }
+
+        // Verify device belongs to the user
+        const { data: deviceData, error: deviceError } = await supabase
+          .from("device_list")
+          .select("device_id")
+          .eq("device_id", deviceId)
+          .eq("user_client_id", user.user_client_id)
+          .single()
+
+        if (deviceError || !deviceData) {
+          throw new Error("Device not found or not linked to the user")
+        }
+
+      } catch (err) {
+        console.error(err instanceof Error ? err.message : "An unknown error occurred")
+      }
+    }
+
+    fetchDeviceInfo()
+  }, [deviceId, user])
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">

@@ -1,0 +1,220 @@
+"use client";
+
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { supabase } from './supabase';
+import Cookies from 'js-cookie';
+
+// Define types
+type User = {
+  id: string;
+  email: string;
+  user_client_id: string;
+  erp_user_id: string;
+};
+
+type AuthContextType = {
+  user: User | null;
+  loading: boolean;
+  signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signOut: () => Promise<void>;
+  isAuthenticated: boolean;
+};
+
+// Create context
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+// Set a secure cookie/localStorage for authentication
+const setAuthData = (key: string, value: string) => {
+  // Set in localStorage
+  localStorage.setItem(key, value);
+  
+  // Also set in cookie for middleware access
+  Cookies.set(key, value, { 
+    expires: 7, // 7 days
+    path: '/',
+    secure: process.env.NODE_ENV === 'production', 
+    sameSite: 'strict'
+  });
+};
+
+// Clear auth data from cookie/localStorage
+const clearAuthData = (key: string) => {
+  localStorage.removeItem(key);
+  Cookies.remove(key, { path: '/' });
+};
+
+// Provider component
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkSession = async () => {
+      setLoading(true);
+      
+      try {
+        // First check if we have a custom auth session
+        const authToken = localStorage.getItem('auth_token') || Cookies.get('auth_token');
+        const userEmail = localStorage.getItem('user_email');
+        const userClientId = localStorage.getItem('user_client_id');
+        const erpUserId = localStorage.getItem('erp_user_id');
+        
+        if (authToken === 'authenticated' && userEmail && userClientId && erpUserId) {
+          // We have a custom auth session, so create a user object
+          setUser({
+            id: erpUserId,
+            email: userEmail,
+            user_client_id: userClientId,
+            erp_user_id: erpUserId
+          });
+          setIsAuthenticated(true);
+          
+          // Ensure cookie is set
+          setAuthData('auth_token', 'authenticated');
+          
+          // Don't try to set a Supabase session with invalid tokens
+          // Just let the custom auth flow work independently
+        } else {
+          // Try to get session from Supabase Auth as fallback
+          const { data: { session } } = await supabase.auth.getSession();
+          
+          if (session?.user) {
+            // Get user details from custom users table
+            const { data: userData } = await supabase
+              .from('users')
+              .select('*')
+              .eq('email', session.user.email)
+              .single();
+              
+            if (userData) {
+              setUser({
+                id: session.user.id,
+                email: session.user.email || '',
+                user_client_id: userData.user_client_id,
+                erp_user_id: userData.erp_user_id
+              });
+              setIsAuthenticated(true);
+              
+              // Store in localStorage and cookies
+              setAuthData('auth_token', 'authenticated');
+              setAuthData('user_client_id', userData.user_client_id);
+              setAuthData('erp_user_id', userData.erp_user_id);
+              setAuthData('user_email', session.user.email || '');
+            }
+          } else {
+            setUser(null);
+            setIsAuthenticated(false);
+          }
+        }
+      } catch (error) {
+        console.error('Session check error:', error);
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    checkSession();
+    
+    // Set up auth state change listener
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event) => {
+      if (event === 'SIGNED_OUT') {
+        setUser(null);
+        setIsAuthenticated(false);
+        clearAuthData('auth_token');
+        clearAuthData('user_client_id');
+        clearAuthData('erp_user_id');
+        clearAuthData('user_email');
+      }
+    });
+    
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  // Sign in function
+  const signIn = async (email: string, password: string) => {
+    try {
+      // Check if the user exists in the users table and verify password
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('email', email)
+        .eq('password', password)
+        .single();
+
+      if (userError || !userData) {
+        return { success: false, error: 'Invalid email or password' };
+      }
+
+      // Create a custom user object
+      const customUser = {
+        id: userData.erp_user_id,
+        email: userData.email,
+        user_client_id: userData.user_client_id,
+        erp_user_id: userData.erp_user_id
+      };
+      
+      // Set in both localStorage and cookies
+      setAuthData('auth_token', 'authenticated');
+      setAuthData('user_client_id', userData.user_client_id);
+      setAuthData('erp_user_id', userData.erp_user_id);
+      setAuthData('user_email', email);
+      
+      // Update state
+      setUser(customUser);
+      setIsAuthenticated(true);
+      
+      // Don't try to create a Supabase session with invalid tokens
+      // Just use our custom auth mechanism
+      
+      return { success: true };
+    } catch (error) {
+      console.error('Sign in error:', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
+  // Sign out function
+  const signOut = async () => {
+    try {
+      // Clear data from both localStorage and cookies
+      clearAuthData('auth_token');
+      clearAuthData('user_client_id');
+      clearAuthData('erp_user_id');
+      clearAuthData('user_email');
+      
+      // Sign out from Supabase Auth (in case there is a session)
+      await supabase.auth.signOut();
+      
+      // Update state
+      setUser(null);
+      setIsAuthenticated(false);
+    } catch (error) {
+      console.error('Sign out error:', error);
+    }
+  };
+
+  const value = {
+    user,
+    loading,
+    signIn,
+    signOut,
+    isAuthenticated
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// Custom hook to use the auth context
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+}; 

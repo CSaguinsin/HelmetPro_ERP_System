@@ -6,8 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/lib/auth-context";
 
 interface LoginFormProps {
   switchToSignUp: () => void;
@@ -15,76 +14,40 @@ interface LoginFormProps {
 
 export function LoginForm({ switchToSignUp }: LoginFormProps) {
   const router = useRouter();
-  const { toast } = useToast();
+  const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
 
     try {
       console.log("Attempting login with:", { email });
 
-      // First, check if the user exists in the users table
-      const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", email)
-        .single();
+      const { success, error } = await signIn(email, password);
 
-      if (userError) {
-        console.error("User lookup error:", userError);
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: "User not found",
-        });
+      if (!success) {
+        setErrorMessage(error || "Invalid email or password");
+        setIsLoading(false);
         return;
       }
 
-      // Then attempt to authenticate with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
+      setSuccessMessage(`Welcome back, ${email}!`);
 
-      if (authError) {
-        console.error("Auth error:", authError);
-        toast({
-          variant: "destructive",
-          title: "Login failed",
-          description: authError.message,
-        });
-        return;
-      }
-
-      if (authData.user) {
-        console.log("Login successful:", authData.user);
-
-        // Store necessary data
-        localStorage.setItem("user_client_id", userData.user_client_id);
-        localStorage.setItem("erp_user_id", userData.erp_user_id);
-
-        toast({
-          title: "Login successful",
-          description: `Welcome back, ${authData.user.email}!`,
-        });
-
-        // Add a small delay before navigation
-        setTimeout(() => {
-          router.push("/dashboard");
-        }, 500);
-      }
+      // Add a small delay before navigation
+      setTimeout(() => {
+        router.push("/dashboard");
+      }, 500);
     } catch (error) {
       console.error("Login error:", error);
-      toast({
-        variant: "destructive",
-        title: "An error occurred",
-        description: "Please try again later.",
-      });
+      setErrorMessage("An error occurred. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -92,6 +55,18 @@ export function LoginForm({ switchToSignUp }: LoginFormProps) {
 
   return (
     <form onSubmit={onSubmit} className="space-y-6">
+      {errorMessage && (
+        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{errorMessage}</span>
+        </div>
+      )}
+      
+      {successMessage && (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+          <span className="block sm:inline">{successMessage}</span>
+        </div>
+      )}
+      
       <div>
         <Label htmlFor="email">Email address</Label>
         <Input
