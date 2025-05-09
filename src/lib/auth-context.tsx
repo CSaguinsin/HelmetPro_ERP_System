@@ -16,6 +16,7 @@ type AuthContextType = {
   user: User | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
 };
@@ -179,6 +180,63 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Sign up function
+  const signUp = async (email: string, password: string) => {
+    try {
+      // Generate a user_client_id and erp_user_id
+      const user_client_id = crypto.randomUUID();
+      const erp_user_id = crypto.randomUUID();
+
+      // Check if the email already exists
+      const { data: existingUser } = await supabase
+        .from('users')
+        .select('email')
+        .eq('email', email)
+        .single();
+
+      if (existingUser) {
+        return { success: false, error: 'Email already exists' };
+      }
+
+      // Insert into users table
+      const { error: userError } = await supabase
+        .from("users")
+        .insert([
+          {
+            user_client_id,
+            erp_user_id,
+            email,
+            password,
+          },
+        ]);
+
+      if (userError) {
+        return { success: false, error: userError.message };
+      }
+
+      // Insert into user_clients table
+      const { error: userClientError } = await supabase
+        .from("user_clients")
+        .insert([
+          {
+            user_client_id,
+            erp_user_id,
+            email,
+            password,
+          },
+        ]);
+
+      if (userClientError) {
+        return { success: false, error: userClientError.message };
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Sign up error:', error);
+      return { success: false, error: 'An unexpected error occurred' };
+    }
+  };
+
   // Sign out function
   const signOut = async () => {
     try {
@@ -203,6 +261,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     loading,
     signIn,
+    signUp,
     signOut,
     isAuthenticated
   };

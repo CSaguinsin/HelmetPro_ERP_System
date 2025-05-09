@@ -5,9 +5,8 @@ import { Eye, EyeOff, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { supabase } from "@/lib/supabase";
 import { useToast } from "@/hooks/use-toast";
-import { v4 as uuidv4 } from "uuid";
+import { useAuth } from "@/lib/auth-context";
 import {
   Dialog,
   DialogContent,
@@ -21,80 +20,47 @@ interface SignUpFormProps {
 
 export function SignUpForm({ switchToLogin }: SignUpFormProps) {
   const { toast } = useToast();
+  const { signUp } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isVerificationModalOpen, setIsVerificationModalOpen] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   async function onSubmit(event: React.SyntheticEvent) {
     event.preventDefault();
     setIsLoading(true);
+    setErrorMessage(null);
+    setSuccessMessage(null);
   
     try {
-      // Step 1: Sign up the user with Supabase Auth - with redirect to the deployed site
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
-        }
-      });
-  
-      if (authError) {
+      console.log("Attempting signup with:", { email });
+      
+      const { success, error } = await signUp(email, password);
+
+      if (!success) {
+        setErrorMessage(error || "Signup failed. Please try again.");
         toast({
           variant: "destructive",
           title: "Signup failed",
-          description: authError.message,
+          description: error || "Please try again later.",
         });
         return;
       }
-  
-      // Step 2: Generate a user_client_id
-      const userClientId = uuidv4();
-  
-      // Step 3: Insert into both users and user_clients tables
-      if (authData.user) {
-        // Insert into users table
-        const { error: userError } = await supabase
-          .from("users")
-          .insert([
-            {
-              user_client_id: userClientId,
-              erp_user_id: authData.user.id,
-              email: authData.user.email,
-              password: password,
-            },
-          ]);
-  
-        if (userError) {
-          throw userError;
-        }
-  
-        // Insert into user_clients table
-        const { error: userClientError } = await supabase
-          .from("user_clients")
-          .insert([
-            {
-              user_client_id: userClientId,
-              erp_user_id: authData.user.id,
-              email: authData.user.email,
-              password: password,
-            },
-          ]);
-  
-        if (userClientError) {
-          throw userClientError;
-        }
-      }
-  
+
+      setSuccessMessage("Account created successfully!");
       toast({
-        title: "Signup successful",
-        description: "Please check your email to verify your account.",
+        title: "Account created successfully",
+        description: "You can now log in with your credentials.",
       });
+      
+      // Show success modal
       setIsVerificationModalOpen(true);
     } catch (error) {
       console.error("Signup error:", error);
+      setErrorMessage("An unexpected error occurred. Please try again later.");
       toast({
         variant: "destructive",
         title: "An error occurred",
@@ -108,6 +74,18 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
   return (
     <>
       <form onSubmit={onSubmit} className="space-y-6">
+        {errorMessage && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{errorMessage}</span>
+          </div>
+        )}
+        
+        {successMessage && (
+          <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative" role="alert">
+            <span className="block sm:inline">{successMessage}</span>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div>
             <Label htmlFor="email">Email address</Label>
@@ -165,11 +143,11 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
       <Dialog open={isVerificationModalOpen} onOpenChange={setIsVerificationModalOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Verify Your Email</DialogTitle>
+            <DialogTitle>Account Created Successfully</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-gray-600">
-              We&apos;ve sent a verification email to {email}. Please check your inbox (and spam folder) and click the link to verify your account.
+              Your account has been created successfully. You can now log in with your credentials.
             </p>
             <Button 
               className="w-full" 
@@ -178,7 +156,7 @@ export function SignUpForm({ switchToLogin }: SignUpFormProps) {
                 switchToLogin();
               }}
             >
-              Got it!
+              Go to Login
             </Button>
           </div>
         </DialogContent>
