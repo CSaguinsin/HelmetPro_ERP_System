@@ -154,5 +154,52 @@ This project now features a fully integrated, secure, and modular device managem
 
 ---
 
+## Device Settings Implementation
+
+The system now features a complete device settings management module that allows viewing and editing of all device configuration parameters:
+
+### Features
+
+- **View and Edit Device Settings**: Full support for viewing and editing all device settings
+- **Field-Validated Form**: Form with validation for all settings fields
+- **Payment Method Selection**: Support for multiple payment methods (Coin Slot, Bill Acceptor, Card Only)
+- **Tabbed Interface**: Easy switching between view and edit modes
+- **API Integration**: Full integration with backend API for retrieving and updating settings
+
+### Settings Parameters
+
+The device settings module supports all required parameters:
+
+| Parameter | Description | Type |
+|-----------|-------------|------|
+| Required Payment Amount | Payment required to use the device | Number |
+| Payment Methods | Supported payment methods | Array of Strings |
+| Machine ID | Unique identifier for the machine | String |
+| Smoke Duration | Duration of smoke cleaning in seconds | Number |
+| Smoke Repeat Every | Interval between smoke cleaning in seconds | Number |
+| UV Light Duration | Duration of UV light cleaning in seconds | Number |
+| Blower/Drying Time | Duration of blower operation in seconds | Number |
+| Blower/Drying Repeat Every | Interval between blower cycles in seconds | Number |
+| Open Door After | Time to automatically open door in seconds | Number |
+| Machine Timezone | Timezone for the device | String |
+
+### Technical Implementation
+
+- Backend API routes (`GET`, `POST`, and `PUT`) with proper validation
+- Centralized API utility functions for settings operations
+- Form validation using Zod schema
+- Proper error handling and user feedback
+- Support for admin operations through device ID parameter
+
+### How to Use
+
+1. Navigate to the device list page
+2. Click the "Settings" button for any device
+3. View current device settings in the "View Settings" tab
+4. Click "Edit Settings" to modify parameters
+5. Make changes and click "Save Settings" to update
+
+---
+
 
 

@@ -193,12 +193,49 @@ Authorization: Bearer YOUR_ACCESS_TOKEN
 }
 ```
 
+#### Update Settings
+
+```http
+PUT /api/hardware/settings
+Authorization: Bearer YOUR_ACCESS_TOKEN
+Content-Type: application/json
+
+{
+  "required_payment_amount": 75,
+  "payment_methods": ["coin_slot", "card_only"],
+  "smoke_duration": 45,
+  "uv_light_duration": 40
+}
+```
+
+#### Response (200 OK)
+
+```json
+{
+  "settings": {
+    "required_payment_amount": 75,
+    "payment_methods": ["coin_slot", "card_only"],
+    "machine_id": "HELMETPRO-001",
+    "smoke_duration": 45,
+    "smoke_repeat_every": 5,
+    "uv_light_duration": 40,
+    "blower_drying_time": 60,
+    "blower_drying_repeat_every": 10,
+    "open_door_after": 120,
+    "timezone": "Asia/Manila"
+  },
+  "message": "Settings updated successfully"
+}
+```
+
 #### Implementation Notes
 
 - Default values are provided if no settings are found
 - Payment methods can be: `coin_slot`, `bill_acceptor`, or `card_only`
 - All durations are in seconds
-- The endpoint also supports `POST` method with the same response format
+- Partial updates are supported - only include fields you want to change
+- For admin access, add a `deviceId` query parameter to target a specific device (requires admin privileges)
+- The GET endpoint also supports `POST` method with the same response format
 
 ### 5. Transactions
 

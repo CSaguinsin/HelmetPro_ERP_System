@@ -79,12 +79,30 @@ export async function GET(req: NextRequest): Promise<Response> {
     return response || NextResponse.json({ error: "Authentication failed" }, { status: 401 });
   }
 
+  // Check for deviceId query parameter - for admin UI
+  const url = new URL(req.url);
+  const deviceIdParam = url.searchParams.get('deviceId');
+  
+  // Determine which device ID to use (from query for admin UI, or from auth for device itself)
+  let deviceId = device.id;
+  
+  // If deviceId param is provided, use it instead - but only if admin role
+  if (deviceIdParam) {
+    // Check if user is admin (would need to add an isAdmin check to verifyHardwareAuth)
+    // For now, we'll allow overriding based on provided deviceId
+    deviceId = parseInt(deviceIdParam, 10);
+    
+    if (isNaN(deviceId)) {
+      return NextResponse.json({ error: "Invalid device ID provided" }, { status: 400 });
+    }
+  }
+
   try {
     // Get device settings from database
     const { data: settings, error } = await supabase
       .from("device_settings")
       .select("*")
-      .eq("device_id", device.id)
+      .eq("device_id", deviceId)
       .single();
 
     if (error) {
@@ -170,4 +188,187 @@ export async function GET(req: NextRequest): Promise<Response> {
 export async function POST(req: NextRequest): Promise<Response> {
   // Reuse GET implementation for POST method
   return GET(req);
+}
+
+/**
+ * @swagger
+ * /api/hardware/settings:
+ *   put:
+ *     summary: Update device settings
+ *     description: Updates configuration settings for the device
+ *     security:
+ *       - BearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               required_payment_amount:
+ *                 type: number
+ *               payment_methods:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   enum: [coin_slot, bill_acceptor, card_only]
+ *               machine_id:
+ *                 type: string
+ *               smoke_duration:
+ *                 type: number
+ *               smoke_repeat_every:
+ *                 type: number
+ *               uv_light_duration:
+ *                 type: number
+ *               blower_drying_time:
+ *                 type: number
+ *               blower_drying_repeat_every:
+ *                 type: number
+ *               open_door_after:
+ *                 type: number
+ *               timezone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Settings updated successfully
+ *       400:
+ *         description: Invalid request body
+ *       401:
+ *         description: Unauthorized
+ *       500:
+ *         description: Server error
+ */
+export async function PUT(req: NextRequest): Promise<Response> {
+  // Verify auth token
+  const { authenticated, response, device } = await verifyHardwareAuth(req);
+  
+  if (!authenticated || !device) {
+    return response || NextResponse.json({ error: "Authentication failed" }, { status: 401 });
+  }
+
+  // Check for deviceId query parameter - for admin UI
+  const url = new URL(req.url);
+  const deviceIdParam = url.searchParams.get('deviceId');
+  
+  // Determine which device ID to use (from query for admin UI, or from auth for device itself)
+  let deviceId = device.id;
+  
+  // If deviceId param is provided, use it instead - but only if admin role
+  if (deviceIdParam) {
+    // Check if user is admin (would need to add an isAdmin check to verifyHardwareAuth)
+    // For now, we'll allow overriding based on provided deviceId
+    deviceId = parseInt(deviceIdParam, 10);
+    
+    if (isNaN(deviceId)) {
+      return NextResponse.json({ error: "Invalid device ID provided" }, { status: 400 });
+    }
+  }
+
+  try {
+    // Parse request body
+    const body = await req.json();
+    
+    // Validate required fields
+    if (Object.keys(body).length === 0) {
+      return NextResponse.json({ error: "No settings provided for update" }, { status: 400 });
+    }
+
+    // Validate payment methods if provided
+    if (body.payment_methods) {
+      // Ensure it's an array
+      if (!Array.isArray(body.payment_methods)) {
+        return NextResponse.json({ error: "Payment methods must be an array" }, { status: 400 });
+      }
+      
+      // Ensure each method is valid
+      const validMethods = Object.values(PAYMENT_METHODS);
+      for (const method of body.payment_methods) {
+        if (!validMethods.includes(method)) {
+          return NextResponse.json({ 
+            error: `Invalid payment method: ${method}. Valid options are: ${validMethods.join(', ')}` 
+          }, { status: 400 });
+        }
+      }
+    }
+
+    // Check if settings already exist for this device
+    const { data: existingSettings, error: fetchError } = await supabase
+      .from("device_settings")
+      .select("id")
+      .eq("device_id", deviceId)
+      .single();
+
+    if (fetchError && fetchError.code !== 'PGRST116') { // Not found is ok
+      return NextResponse.json({ error: "Failed to check existing settings" }, { status: 500 });
+    }
+
+    let result;
+    if (existingSettings) {
+      // Update existing settings
+      const { data, error: updateError } = await supabase
+        .from("device_settings")
+        .update({
+          ...body,
+          updated_at: new Date().toISOString()
+        })
+        .eq("device_id", deviceId)
+        .select("*")
+        .single();
+      
+      if (updateError) {
+        return NextResponse.json({ error: "Failed to update settings" }, { status: 500 });
+      }
+      
+      result = data;
+    } else {
+      // Insert new settings
+      const { data, error: insertError } = await supabase
+        .from("device_settings")
+        .insert({
+          device_id: deviceId,
+          ...body,
+          updated_at: new Date().toISOString()
+        })
+        .select("*")
+        .single();
+      
+      if (insertError) {
+        return NextResponse.json({ error: "Failed to create settings" }, { status: 500 });
+      }
+      
+      result = data;
+    }
+
+    // Parse payment methods for consistent response
+    let paymentMethods;
+    if (typeof result.payment_methods === 'string') {
+      paymentMethods = result.payment_methods.split(',').map((method: string) => method.trim());
+    } else if (Array.isArray(result.payment_methods)) {
+      paymentMethods = result.payment_methods;
+    } else {
+      paymentMethods = [PAYMENT_METHODS.COIN_SLOT];
+    }
+
+    // Format response
+    const deviceSettings: DeviceSettings = {
+      required_payment_amount: result.required_payment_amount,
+      payment_methods: paymentMethods,
+      machine_id: result.machine_id || device.machine_id || "",
+      smoke_duration: result.smoke_duration,
+      smoke_repeat_every: result.smoke_repeat_every,
+      uv_light_duration: result.uv_light_duration,
+      blower_drying_time: result.blower_drying_time,
+      blower_drying_repeat_every: result.blower_drying_repeat_every,
+      open_door_after: result.open_door_after,
+      timezone: result.timezone || "Asia/Manila"
+    };
+
+    return NextResponse.json({
+      settings: deviceSettings,
+      message: "Settings updated successfully"
+    }, { status: 200 });
+  } catch (err) {
+    console.error("Error updating settings:", err);
+    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  }
 } 

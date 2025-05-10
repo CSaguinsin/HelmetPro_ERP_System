@@ -25,9 +25,9 @@ export interface DeviceSettings {
   smoke_duration: number;
   smoke_repeat_every: number;
   uv_light_duration: number;
-  blower_time: number;
-  blower_repeat_every: number;
-  door_open_after: number;
+  blower_drying_time: number;
+  blower_drying_repeat_every: number;
+  open_door_after: number;
   timezone: string;
 }
 
@@ -106,12 +106,20 @@ export const getFirmware = async (): Promise<ApiResponse<{ url: string }>> => {
 };
 
 // Settings API
-export const getSettings = async (): Promise<ApiResponse<DeviceSettings>> => {
-  return apiCall<DeviceSettings>('settings');
+export const getSettings = async (deviceId?: string | number): Promise<ApiResponse<DeviceSettings>> => {
+  let endpoint = 'settings';
+  if (deviceId) {
+    endpoint += `?deviceId=${deviceId}`;
+  }
+  return apiCall<DeviceSettings>(endpoint);
 };
 
-export const updateSettings = async (settings: Partial<DeviceSettings>): Promise<ApiResponse<DeviceSettings>> => {
-  return apiCall<DeviceSettings>('settings', 'PUT', settings);
+export const updateSettings = async (settings: Partial<DeviceSettings>, deviceId?: string | number): Promise<ApiResponse<DeviceSettings>> => {
+  let endpoint = 'settings';
+  if (deviceId) {
+    endpoint += `?deviceId=${deviceId}`;
+  }
+  return apiCall<DeviceSettings>(endpoint, 'PUT', settings);
 };
 
 // Transaction API
