@@ -14,20 +14,34 @@ import { LoadingDots } from '../../../../components/loading-dots';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AddDeviceInfo from "./add-device-info";
 import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/lib/auth-context";
+import { useRouter } from "next/navigation";
 
 // Fetch device data from Supabase
-async function getData() {
-  const { data, error } = await supabase.from("device_list").select("*");
-  if (error) {
-    console.error("Error fetching device_list:", error);
+async function getData(userClientId: string) {
+  if (!userClientId) {
     return [];
   }
-  return data;
+
+  const { data, error } = await supabase
+    .from("device_list")
+    .select("*")
+    .eq("user_client_id", userClientId);
+
+  if (error) {
+    console.error("Error fetching device_list:", error);
+    throw error;
+  }
+
+  return data || [];
 }
 
 export default function DeviceLists() {
+  const router = useRouter();
+  const { user, loading: authLoading, isAuthenticated } = useAuth();
   const [data, setData] = useState<DeviceList[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [filters, setFilters] = useState({
     deviceType: "",
@@ -37,19 +51,32 @@ export default function DeviceLists() {
   });
 
   useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push("/");
+      return;
+    }
+
     const fetchData = async () => {
+      if (!user?.user_client_id) {
+        setLoading(false);
+        return;
+      }
+
       try {
         setLoading(true);
-        const result = await getData();
+        setError(null);
+        const result = await getData(user.user_client_id);
         setData(result);
       } catch (error) {
         console.error('Error fetching data:', error);
+        setError("Failed to load devices. Please try again later.");
       } finally {
         setLoading(false);
       }
     };
+
     fetchData();
-  }, []);
+  }, [user, authLoading, isAuthenticated, router]);
 
   if (loading) {
     return (
@@ -91,6 +118,12 @@ export default function DeviceLists() {
               </Button>
             </div>
           </div>
+
+          {error && (
+            <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-md">
+              {error}
+            </div>
+          )}
 
           {/* Filters and Actions Card */}
           <Card className="mb-6 bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
@@ -167,7 +200,13 @@ export default function DeviceLists() {
               <CardTitle className="text-xl font-semibold text-gray-900 dark:text-white">Device Information</CardTitle>
             </CardHeader>
             <CardContent>
-              <DeviceDataTable columns={columns} data={data} />
+              {data.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  No devices found. Click &quot;New Device Info&quot; to add your first device.
+                </div>
+              ) : (
+                <DeviceDataTable columns={columns} data={data} />
+              )}
             </CardContent>
           </Card>
         </div>

@@ -4,12 +4,12 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Settings, ShoppingCart, ChevronDown, Layers, LogOut } from "lucide-react"
+import { LayoutDashboard, Settings, ChevronDown, Layers, LogOut } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import Image from "next/image"
 import { useState } from "react"
 import { supabase } from "@/lib/supabase"
-import type React from "react" // Added import for React
+import type React from "react"
 
 interface SubItem {
   title: string
@@ -42,15 +42,6 @@ const menuItems: MenuItem[] = [
       { title: "Commodity Category Setting", href: "/dashboard/commodity-category-settings" },
       { title: "Set Material Info", href: "/dashboard/set-material-info" },
       { title: "Add or Edit Machine Images", href: "/dashboard/machine-images" },
-    ],
-  },
-  {
-    title: "Sales Management",
-    icon: ShoppingCart,
-    subItems: [
-      { title: "Online Order Inquiry", href: "/sales/orders" },
-      { title: "Commodity Distribution Management", href: "/sales/customers" },
-      { title: "Products", href: "/sales/products" },
     ],
   },
   {

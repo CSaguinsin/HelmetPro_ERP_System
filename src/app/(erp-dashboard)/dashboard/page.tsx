@@ -5,34 +5,11 @@ import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/lib/auth-context";
-
-// Try to import components, but provide fallbacks if they don't exist
-let Sidebar: React.FC = () => <div className="w-64 bg-gray-100 h-screen">Sidebar</div>;
-let DeviceStateCard: React.FC = () => <Card><CardHeader><CardTitle>Device State</CardTitle></CardHeader><CardContent>Loading...</CardContent></Card>;
-let OperatingStatusCard: React.FC = () => <Card><CardHeader><CardTitle>Operating Status</CardTitle></CardHeader><CardContent>Loading...</CardContent></Card>;
-let DeviceEndateCard: React.FC = () => <Card><CardHeader><CardTitle>Device Endate</CardTitle></CardHeader><CardContent>Loading...</CardContent></Card>;
-let LoadingDots: React.FC<{color?: string, size?: number, speed?: number}> = () => <div className="flex space-x-2"><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div><div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div></div>;
-
-try {
-  // Try to import components dynamically
-  import("../../components/Sidebar").then(module => {
-    Sidebar = module.default;
-  });
-  import("../../components/DeviceStateCard").then(module => {
-    DeviceStateCard = module.default;
-  });
-  import("../../components/OperatingStatusCard").then(module => {
-    OperatingStatusCard = module.default;
-  });
-  import("../../components/DeviceEndateCard").then(module => {
-    DeviceEndateCard = module.default;
-  });
-  import("../../components/loading-dots").then(module => {
-    LoadingDots = module.LoadingDots;
-  });
-} catch (error) {
-  console.error("Error importing components:", error);
-}
+import Sidebar from "../../components/Sidebar";
+import DeviceStateCard from "../../components/DeviceStateCard";
+import OperatingStatusCard from "../../components/OperatingStatusCard";
+import DeviceEndateCard from "../../components/DeviceEndateCard";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // ✅ Type Definitions
 type Device = {
@@ -43,6 +20,29 @@ type Device = {
   customer_nan: string;
   is_mobile_logged_in?: boolean;
 };
+
+// Skeleton loader component for cards
+const CardSkeleton = () => (
+  <Card className="bg-white dark:bg-gray-800 shadow-lg">
+    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+      <Skeleton className="h-4 w-[120px]" />
+    </CardHeader>
+    <CardContent>
+      <Skeleton className="h-8 w-[60px] mb-2" />
+      <Skeleton className="h-4 w-[100px]" />
+    </CardContent>
+  </Card>
+);
+
+// Skeleton loader for device cards
+const DeviceCardSkeleton = () => (
+  <div className="p-4 rounded-lg shadow-md border border-gray-200">
+    <Skeleton className="h-6 w-[150px] mb-2" />
+    <Skeleton className="h-4 w-[100px] mb-2" />
+    <Skeleton className="h-4 w-[120px] mb-2" />
+    <Skeleton className="h-4 w-[140px]" />
+  </div>
+);
 
 export default function DashboardPage() {
   const router = useRouter();
@@ -119,14 +119,6 @@ export default function DashboardPage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  if (authLoading || loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <LoadingDots color="#3B82F6" size={8} speed={0.5} />
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
       {/* Sidebar */}
@@ -153,24 +145,41 @@ export default function DashboardPage() {
 
             {/* Cards Grid */}
             <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
-              <DeviceStateCard />
-              <OperatingStatusCard />
-              <DeviceEndateCard />
-              <Card className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
-                <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                  <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Devices</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{devices.length}</div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">+20.1% from last month</p>
-                </CardContent>
-              </Card>
+              {loading ? (
+                <>
+                  <CardSkeleton />
+                  <CardSkeleton />
+                  <CardSkeleton />
+                  <CardSkeleton />
+                </>
+              ) : (
+                <>
+                  <DeviceStateCard />
+                  <OperatingStatusCard />
+                  <DeviceEndateCard />
+                  <Card className="bg-white dark:bg-gray-800 shadow-lg hover:shadow-xl transition-shadow duration-300">
+                    <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                      <CardTitle className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Devices</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-2xl font-bold text-gray-900 dark:text-white">{devices.length}</div>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">+20.1% from last month</p>
+                    </CardContent>
+                  </Card>
+                </>
+              )}
             </div>
 
             {/* Device List */}
             <div className="mt-6 p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg">
               <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white">Your Vending Machines</h3>
-              {devices.length > 0 ? (
+              {loading ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <DeviceCardSkeleton />
+                  <DeviceCardSkeleton />
+                  <DeviceCardSkeleton />
+                </div>
+              ) : devices.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {devices.map((device) => (
                     <div 
