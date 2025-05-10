@@ -23,10 +23,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { supabase } from "@/lib/supabase"
 import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
+import { getAssets, uploadAsset, type MediaFile } from "@/lib/hardwareApi"
 
 type FileWithPreview = {
   id: string
@@ -43,10 +43,9 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
   const [activeTab, setActiveTab] = useState("all")
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
-  const { user } = useAuth()
+  const { } = useAuth()
 
   const handleUpload = async (file: File, type: "logo" | "video" | "image") => {
-    const filePath = `media/${deviceId}/${file.name}`
     const fileData: FileWithPreview = {
       id: crypto.randomUUID(),
       file,
@@ -61,27 +60,14 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
     else setCompanyImages((prev) => [...prev, fileData])
 
     try {
-      // Upload to Supabase Storage
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from("vending-media")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false,
-        })
-
-      if (uploadError) throw uploadError
-
-      // Insert into media_files table
-      const { error: dbError } = await supabase
-        .from("media_files")
-        .insert([{
-          device_id: deviceId,
-          file_url: uploadData.path,
-          file_type: type,
-        }])
-
-      if (dbError) throw dbError
-
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('deviceId', deviceId);
+      formData.append('type', type);
+      
+      const result = await uploadAsset(formData);
+      if (result.error) throw new Error(result.error);
+      
       // Update status to complete
       if (type === "logo") setCompanyLogo((prev) => ({ ...prev!, status: "complete" }))
       else if (type === "video") setVideoAd((prev) => ({ ...prev!, status: "complete" }))
@@ -165,82 +151,87 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
       setIsSaving(true)
       
       // Get all uploaded media files
-      const { data: mediaFiles, error: mediaError } = await supabase
-        .from('media_files')
-        .select('*')
-        .eq('device_id', deviceId)
+      const result = await getAssets();
+      if (result.error) throw new Error(result.error);
 
-      if (mediaError) throw mediaError
-
+      const mediaFiles = result.data || [];
+      
       // Verify all required media types are present
-      const hasLogo = mediaFiles.some(file => file.file_type === 'logo')
-      const hasVideo = mediaFiles.some(file => file.file_type === 'video')
-      const hasImages = mediaFiles.some(file => file.file_type === 'image')
+      const hasLogo = mediaFiles.some((file: MediaFile) => file.file_type === 'logo');
+      const hasVideo = mediaFiles.some((file: MediaFile) => file.file_type === 'video');
+      const hasImages = mediaFiles.some((file: MediaFile) => file.file_type === 'image');
 
       if (!hasLogo || !hasVideo || !hasImages) {
         toast({
           title: "Missing Required Media",
           description: "Please upload all required media types: logo, video, and at least one image.",
           variant: "destructive"
-        })
-        return
+        });
+        return;
       }
 
       // Update device status to indicate media is configured
-      const { error: updateError } = await supabase
-        .from('device_list')
-        .update({ media_configured: true })
-        .eq('device_id', deviceId)
-
-      if (updateError) throw updateError
+      const updateResult = await fetch('/api/device/update', {
+        method: 'PUT',
+        headers: { 'access_token': localStorage.getItem('auth_token') || '' },
+        body: JSON.stringify({ 
+          deviceId,
+          media_configured: true 
+        }),
+      });
+      
+      const updateResponse = await updateResult.json();
+      if (updateResponse.error) throw new Error(updateResponse.error);
 
       toast({
         title: "Success",
         description: "Media files have been saved successfully.",
-      })
+      });
 
       // Redirect back to dashboard
-      router.push('/dashboard')
+      router.push('/dashboard');
 
     } catch (error) {
-      console.error('Error saving media:', error)
+      console.error('Error saving media:', error);
       toast({
         title: "Error",
         description: "Failed to save media files. Please try again.",
         variant: "destructive"
-      })
+      });
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
   useEffect(() => {
-    const fetchDeviceInfo = async () => {
+    const fetchAssets = async () => {
       try {
-        // Use the authenticated user from our custom auth context
-        if (!user || !user.user_client_id) {
-          throw new Error("User not authenticated")
-        }
-
-        // Verify device belongs to the user
-        const { data: deviceData, error: deviceError } = await supabase
-          .from("device_list")
-          .select("device_id")
-          .eq("device_id", deviceId)
-          .eq("user_client_id", user.user_client_id)
-          .single()
-
-        if (deviceError || !deviceData) {
-          throw new Error("Device not found or not linked to the user")
-        }
-
-      } catch (err) {
-        console.error(err instanceof Error ? err.message : "An unknown error occurred")
+        const result = await getAssets();
+        if (result.error) throw new Error(result.error);
+        
+        const mediaFiles = result.data || [];
+        
+        // Update state with existing media files
+        mediaFiles.forEach((file: MediaFile) => {
+          const fileData: FileWithPreview = {
+            id: crypto.randomUUID(),
+            file: new File([], file.file_name),
+            preview: file.file_url,
+            progress: 100,
+            status: "complete"
+          };
+          
+          if (file.file_type === 'logo') setCompanyLogo(fileData);
+          else if (file.file_type === 'video') setVideoAd(fileData);
+          else if (file.file_type === 'image') setCompanyImages(prev => [...prev, fileData]);
+        });
+      } catch (error) {
+        console.error('Error fetching assets:', error);
       }
-    }
-
-    fetchDeviceInfo()
-  }, [deviceId, user])
+    };
+    
+    fetchAssets();
+  }, []);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">

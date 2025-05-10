@@ -1,4 +1,3 @@
-
 # Client-Specific Machine Monitoring and Earnings Dashboard
 
 ## Overview
@@ -81,4 +80,79 @@ Contributions are welcome! If you'd like to improve this project, please fork th
 This project is licensed under the [MIT License](LICENSE).
 
 **Copyright © Craftora.**
+
+# HelmetPro ERP - API & Frontend Integration Guide
+
+## Overview
+This project now features a fully integrated, secure, and modular device management system, including:
+- Device settings management (view per device)
+- Secure, authenticated file uploads via backend API
+- Transaction, status, and feedback UI for each device
+- Centralized API utility for all hardware-related calls
+
+---
+
+## Features
+
+### 1. Device Settings Page
+- Each device in the device list has a **Settings** button.
+- Navigates to `/dashboard/device-settings/[deviceId]`.
+- Fetches and displays device settings from the backend API.
+- (Ready for future editing support.)
+
+### 2. File Upload API Integration
+- All media uploads (logo, video, images) are POSTed to `/api/hardware/assets` using `FormData` and the `access_token` header.
+- No direct client-side Supabase uploads; all uploads are authenticated and routed through the backend.
+- The backend can validate/process uploads and return file URLs.
+
+### 3. Transaction, Status, and Feedback UI
+- For each device, the UI renders:
+  - `SendTransaction` (send a transaction to the backend)
+  - `SendStatus` (send a status update)
+  - `SendFeedback` (send a rating and comments)
+- All use the centralized API utility and are authenticated.
+
+### 4. Centralized API Utility
+- All hardware API calls are made via `src/lib/hardwareApi.ts`.
+- Ensures correct headers, payloads, and error handling.
+
+---
+
+## Developer Usage
+
+### Device Settings
+- Go to the device list page.
+- Click the **Settings** button for any device to view its settings.
+- Settings are fetched from `/api/hardware/settings`.
+
+### File Uploads
+- All uploads in the media upload component are sent to `/api/hardware/assets`.
+- The backend must accept `FormData` and the `access_token` header.
+- The frontend expects a JSON response with the file URL or error.
+
+### Transaction, Status, Feedback
+- Components are rendered for each device in the device list.
+- All API calls are authenticated using the token from `localStorage`.
+
+### Adding New API Calls
+- Use `src/lib/hardwareApi.ts` for all new hardware-related API calls.
+- Always include the `access_token` header for authentication.
+
+---
+
+## Best Practices
+- All API calls are authenticated and centralized.
+- UI is modular and maintainable.
+- Linter and type errors are fixed.
+- Ready for production and future extensibility.
+
+---
+
+## Next Steps (Optional)
+- To make device settings editable, add a form and PATCH/PUT logic to the settings page.
+- To further customize uploads or backend validation, update the backend API accordingly.
+
+---
+
+
 

@@ -13,28 +13,12 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { LoadingDots } from '../../../../components/loading-dots';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import AddDeviceInfo from "./add-device-info";
-import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-
-// Fetch device data from Supabase
-async function getData(userClientId: string) {
-  if (!userClientId) {
-    return [];
-  }
-
-  const { data, error } = await supabase
-    .from("device_list")
-    .select("*")
-    .eq("user_client_id", userClientId);
-
-  if (error) {
-    console.error("Error fetching device_list:", error);
-    throw error;
-  }
-
-  return data || [];
-}
+import { getDeviceDetails } from "@/lib/hardwareApi";
+import SendTransaction from "@/app/components/SendTransaction";
+import SendStatus from "@/app/components/SendStatus";
+import SendFeedback from "@/app/components/SendFeedback";
 
 export default function DeviceLists() {
   const router = useRouter();
@@ -57,7 +41,8 @@ export default function DeviceLists() {
     }
 
     const fetchData = async () => {
-      if (!user?.user_client_id) {
+      const token = typeof window !== "undefined" ? localStorage.getItem('auth_token') || '' : '';
+      if (!token) {
         setLoading(false);
         return;
       }
@@ -65,8 +50,15 @@ export default function DeviceLists() {
       try {
         setLoading(true);
         setError(null);
-        const result = await getData(user.user_client_id);
-        setData(result);
+        const result = await getDeviceDetails();
+        if ('error' in result) {
+          throw new Error(result.error);
+        }
+        if (result.data) {
+          setData([result.data]);
+        } else {
+          setData([]);
+        }
       } catch (error) {
         console.error('Error fetching data:', error);
         setError("Failed to load devices. Please try again later.");
@@ -205,7 +197,26 @@ export default function DeviceLists() {
                   No devices found. Click &quot;New Device Info&quot; to add your first device.
                 </div>
               ) : (
-                <DeviceDataTable columns={columns} data={data} />
+                <div>
+                  <DeviceDataTable columns={columns} data={data} />
+                  <div className="mt-8 space-y-8">
+                    {data.map(device => (
+                      <Card key={device.device_id} className="p-4 bg-gray-50 dark:bg-gray-900">
+                        <div className="font-semibold mb-2 flex items-center justify-between">
+                          <span>Device: {device.device_name || device.device_id}</span>
+                          <Button size="sm" onClick={() => router.push(`/dashboard/device-settings/${device.device_id}`)}>
+                            Settings
+                          </Button>
+                        </div>
+                        <div className="flex flex-wrap gap-4">
+                          <SendTransaction machineId={device.device_id.toString()} />
+                          <SendStatus />
+                          <SendFeedback machineId={device.device_id.toString()} />
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
               )}
             </CardContent>
           </Card>
