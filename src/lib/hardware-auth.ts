@@ -149,21 +149,90 @@ export async function verifyHardwareAuth(req: NextRequest) {
         // For hardware endpoints, also fetch the user's associated device if needed
         const isDeviceEndpoint = req.nextUrl.pathname.includes('/device-');
         if (isDeviceEndpoint) {
-          // Fetch the user's primary device (assuming users have a device_id field)
-          if (userData.device_id) {
-            const { data: device, error: deviceError } = await supabase
-              .from("devices")
-              .select("*")
-              .eq("id", userData.device_id)
-              .single();
+          // Check for device_id parameter in the request
+          const url = new URL(req.url);
+          const requestedDeviceId = url.searchParams.get('device_id');
+          
+          // First try to find devices associated with this user via user_client relationship
+          const { data: userClient, error: userClientError } = await supabase
+            .from("user_clients")
+            .select("user_client_id")
+            .eq("erp_user_id", userData.erp_user_id)
+            .single();
+
+          if (!userClientError && userClient) {
+            // Look up device in device_list table
+            let query = supabase
+              .from("device_list")
+              .select("*");
+              
+            if (requestedDeviceId) {
+              query = query.eq("device_id", requestedDeviceId);
+            } else {
+              query = query.eq("user_client_id", userClient.user_client_id);
+            }
+            
+            const { data: device, error: deviceError } = await query.single();
               
             if (!deviceError && device) {
+              // Convert to expected device format
+              const formattedDevice = {
+                id: device.device_id.toString(),
+                machine_id: device.device_reg_id || "unknown",
+                model: device.device_type || "HelmetPro Standard",
+                firmware_version: "1.0.0",
+                hardware_version: "1.0.0",
+                status: device.device_status.toLowerCase(),
+                location: null,
+                last_connection: device.updated_at,
+                registered_at: device.created_at
+              };
+              
               return {
                 authenticated: true,
                 response: null,
-                device,
+                device: formattedDevice,
                 user: userData
               };
+            }
+          }
+          
+          // Fallback - check local storage for device ID if stored
+          const localDeviceInfo = req.headers.get("x-device-info");
+          if (localDeviceInfo) {
+            try {
+              const deviceInfo = JSON.parse(localDeviceInfo);
+              if (deviceInfo.device_id) {
+                const { data: device, error: deviceError } = await supabase
+                  .from("device_list")
+                  .select("*")
+                  .eq("device_id", deviceInfo.device_id)
+                  .single();
+                
+                if (!deviceError && device) {
+                  // Convert to expected device format
+                  const formattedDevice = {
+                    id: device.device_id.toString(),
+                    machine_id: device.device_reg_id || "unknown",
+                    model: device.device_type || "HelmetPro Standard",
+                    firmware_version: "1.0.0",
+                    hardware_version: "1.0.0",
+                    status: device.device_status.toLowerCase(),
+                    location: null,
+                    last_connection: device.updated_at,
+                    registered_at: device.created_at
+                  };
+                  
+                  return {
+                    authenticated: true,
+                    response: null,
+                    device: formattedDevice,
+                    user: userData
+                  };
+                }
+              }
+            } catch (e) {
+              console.error("Failed to parse device info:", e);
             }
           }
         }
@@ -218,21 +287,90 @@ export async function verifyHardwareAuth(req: NextRequest) {
       // For hardware endpoints, also fetch the user's associated device if needed
       const isDeviceEndpoint = req.nextUrl.pathname.includes('/device-');
       if (isDeviceEndpoint) {
-        // Fetch the user's primary device (assuming users have a device_id field)
-        if (userData.device_id) {
-          const { data: device, error: deviceError } = await supabase
-            .from("devices")
-            .select("*")
-            .eq("id", userData.device_id)
-            .single();
+        // Check for device_id parameter in the request
+        const url = new URL(req.url);
+        const requestedDeviceId = url.searchParams.get('device_id');
+        
+        // First try to find devices associated with this user via user_client relationship
+        const { data: userClient, error: userClientError } = await supabase
+          .from("user_clients")
+          .select("user_client_id")
+          .eq("erp_user_id", validation.userId)
+          .single();
+
+        if (!userClientError && userClient) {
+          // Look up device in device_list table
+          let query = supabase
+            .from("device_list")
+            .select("*");
+            
+          if (requestedDeviceId) {
+            query = query.eq("device_id", requestedDeviceId);
+          } else {
+            query = query.eq("user_client_id", userClient.user_client_id);
+          }
+          
+          const { data: device, error: deviceError } = await query.single();
             
           if (!deviceError && device) {
+            // Convert to expected device format
+            const formattedDevice = {
+              id: device.device_id.toString(),
+              machine_id: device.device_reg_id || "unknown",
+              model: device.device_type || "HelmetPro Standard", 
+              firmware_version: "1.0.0",
+              hardware_version: "1.0.0",
+              status: device.device_status.toLowerCase(),
+              location: null,
+              last_connection: device.updated_at,
+              registered_at: device.created_at
+            };
+            
             return {
               authenticated: true,
               response: null,
-              device,
+              device: formattedDevice,
               user: userData
             };
+          }
+        }
+        
+        // Fallback - check local storage for device ID if stored
+        const localDeviceInfo = req.headers.get("x-device-info");
+        if (localDeviceInfo) {
+          try {
+            const deviceInfo = JSON.parse(localDeviceInfo);
+            if (deviceInfo.device_id) {
+              const { data: device, error: deviceError } = await supabase
+                .from("device_list")
+                .select("*")
+                .eq("device_id", deviceInfo.device_id)
+                .single();
+              
+              if (!deviceError && device) {
+                // Convert to expected device format
+                const formattedDevice = {
+                  id: device.device_id.toString(),
+                  machine_id: device.device_reg_id || "unknown",
+                  model: device.device_type || "HelmetPro Standard",
+                  firmware_version: "1.0.0",
+                  hardware_version: "1.0.0",
+                  status: device.device_status.toLowerCase(),
+                  location: null,
+                  last_connection: device.updated_at,
+                  registered_at: device.created_at
+                };
+                
+                return {
+                  authenticated: true,
+                  response: null,
+                  device: formattedDevice,
+                  user: userData
+                };
+              }
+            }
+          } catch (e) {
+            console.error("Failed to parse device info:", e);
           }
         }
       }

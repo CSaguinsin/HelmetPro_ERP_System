@@ -90,6 +90,12 @@ const apiCall = async <T>(
       if (userClientId) {
         headers['x-user-client-id'] = userClientId;
       }
+      
+      // Add device info if available
+      const deviceInfo = localStorage.getItem('device_info');
+      if (deviceInfo) {
+        headers['x-device-info'] = deviceInfo;
+      }
     }
 
     const response = await fetch(`/api/hardware/${endpoint}`, {
@@ -99,7 +105,37 @@ const apiCall = async <T>(
     });
 
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || 'API call failed');
+    
+    // Special handling for the "No device associated" error
+    if (!response.ok) {
+      if (response.status === 404 && result.error && result.error.includes('No device associated with this user')) {
+        // For device-details endpoint, return empty data instead of throwing
+        if (endpoint.startsWith('device-details')) {
+          return { data: undefined } as ApiResponse<T>;
+        }
+      }
+      throw new Error(result.error || 'API call failed');
+    }
+    
+    // Transform device data from device-details endpoint to match the expected structure
+    if (endpoint.startsWith('device-details') && result.device) {
+      // Map the API response to our DeviceDetails interface
+      const transformedData = {
+        device_id: parseInt(result.device.id) || 0,
+        device_name: result.device.machine_id || "Unknown Device",
+        device_status: result.device.status === "active" ? "Enable" : "Disable",
+        device_type: result.device.model || "HelmetPro Standard",
+        status: result.device.status || "active",
+        protocol_type: "Standard",
+        maturity_time: "",
+        department: "",
+        customer_name: "",
+        device_reg_id: result.device.machine_id || "Unknown"
+      };
+      
+      return { data: transformedData as unknown as T };
+    }
+    
     return result;
   } catch (error) {
     console.error(`API call to ${endpoint} failed:`, error);
@@ -142,6 +178,12 @@ export const uploadAsset = async (formData: FormData): Promise<ApiResponse<Media
                           localStorage.getItem('user_client_id');
       if (userClientId) {
         headers['x-user-client-id'] = userClientId;
+      }
+      
+      // Add device info if available
+      const deviceInfo = localStorage.getItem('device_info');
+      if (deviceInfo) {
+        headers['x-device-info'] = deviceInfo;
       }
     }
 

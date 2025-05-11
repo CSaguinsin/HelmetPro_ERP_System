@@ -58,6 +58,33 @@ export default function DashboardPage() {
       if (!user?.user_client_id) return;
 
       try {
+        // First check if mobile_sessions table exists
+        const { error: checkError } = await supabase
+          .from('mobile_sessions')
+          .select('*', { count: 'exact', head: true });
+          
+        // If table doesn't exist or we can't access it, just fetch devices without join
+        if (checkError) {
+          console.log("Mobile sessions table not available:", checkError.message);
+          
+          const { data, error } = await supabase
+            .from("device_list")
+            .select(`
+              device_id, 
+              device_name, 
+              device_status, 
+              protocol_type, 
+              customer_nan
+            `)
+            .eq("user_client_id", user.user_client_id);
+            
+          if (error) throw error;
+          setDevices(data || []);
+          setLoading(false);
+          return;
+        }
+        
+        // If mobile_sessions exists, try with a left join instead of inner join
         const { data, error } = await supabase
           .from("device_list")
           .select(`
@@ -66,7 +93,7 @@ export default function DashboardPage() {
             device_status, 
             protocol_type, 
             customer_nan,
-            mobile_sessions:mobile_sessions!inner(is_active)
+            mobile_sessions(is_active)
           `)
           .eq("user_client_id", user.user_client_id);
 
@@ -95,7 +122,7 @@ export default function DashboardPage() {
           setDevices(devicesWithStatus || []);
         } catch (err) {
           console.error("Error processing device data:", err);
-          setDevices([]);
+          setDevices(data || []);
         } finally {
           setLoading(false);
         }

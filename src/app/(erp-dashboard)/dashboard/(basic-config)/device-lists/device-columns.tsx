@@ -14,6 +14,8 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
+import { supabase } from "@/lib/supabase";
 
 // Define the correct type for the device_list data
 export interface DeviceList {
@@ -29,7 +31,10 @@ export interface DeviceList {
   device_reg_id: string;
 }
 
-export const columns: ColumnDef<DeviceList>[] = [
+export const getColumns = (
+  router: AppRouterInstance, 
+  refreshData: () => Promise<void>
+): ColumnDef<DeviceList>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -141,6 +146,56 @@ export const columns: ColumnDef<DeviceList>[] = [
     cell: ({ row }) => {
       const device = row.original;
 
+      const handleDelete = async () => {
+        if (confirm(`Are you sure you want to delete device ${device.device_name || device.device_id}?`)) {
+          try {
+            // Delete from device_list
+            const { error } = await supabase
+              .from("device_list")
+              .delete()
+              .eq("device_id", device.device_id);
+              
+            if (error) {
+              console.error("Failed to delete device:", error);
+              alert(`Error deleting device: ${error.message}`);
+              return;
+            }
+            
+            // Try to also delete from device_settings if it exists
+            try {
+              await supabase
+                .from("device_settings")
+                .delete()
+                .eq("device_id", device.device_id);
+            } catch {
+              // It's ok if this fails - the settings might not exist
+              console.log("Note: Device settings deletion was skipped or failed");
+            }
+            
+            // Remove from localStorage if this was the active device
+            if (localStorage.getItem("device_id") === device.device_id.toString()) {
+              localStorage.removeItem("device_id");
+            }
+            
+            // Update stored devices list in localStorage
+            const storedDevices = JSON.parse(localStorage.getItem("user_devices") || "[]");
+            const updatedDevices = storedDevices.filter(
+              (d: { device_id: number | string }) => d.device_id?.toString() !== device.device_id?.toString()
+            );
+            localStorage.setItem("user_devices", JSON.stringify(updatedDevices));
+            
+            // Refresh the data to update the UI
+            await refreshData();
+            
+            // Show success message
+            alert("Device deleted successfully");
+          } catch (error) {
+            console.error("Error deleting device:", error);
+            alert("An error occurred while deleting the device");
+          }
+        }
+      };
+
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -155,9 +210,15 @@ export const columns: ColumnDef<DeviceList>[] = [
               Copy Device ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>View Details</DropdownMenuItem>
-            <DropdownMenuItem>Edit</DropdownMenuItem>
-            <DropdownMenuItem>Delete</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`/dashboard/device-lists/${device.device_id}`)}>
+              View Details
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push(`/dashboard/device-settings/${device.device_id}`)}>
+              Edit
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleDelete}>
+              Delete
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       );

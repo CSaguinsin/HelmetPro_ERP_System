@@ -113,30 +113,61 @@ export default function DeviceSettingsPage() {
       }
 
       try {
-        const { data, error } = await supabase
+        // First verify the device exists and belongs to the user
+        const { data: deviceData, error: deviceError } = await supabase
           .from("device_list")
-          .select("device_id, device_name")
+          .select("device_id, device_name, device_reg_id")
           .eq("user_client_id", user.user_client_id)
           .eq("device_id", deviceIdString)
           .single();
 
-        if (error || !data) {
+        if (deviceError || !deviceData) {
           setError("Device not found or access denied");
           setLoading(false);
           return;
         }
 
-        // Device exists and belongs to user, load mock settings
-        // In a real implementation, we would fetch from the API or database
-        const mockSettings = {
-          ...defaultSettings,
-          machine_id: deviceIdString,
-        };
+        // Now fetch the device settings from our new table
+        const { data: settingsData, error: settingsError } = await supabase
+          .from("device_settings")
+          .select("*")
+          .eq("device_id", deviceIdString)
+          .single();
+
+        if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 is "not found"
+          console.error("Error fetching settings:", settingsError);
+          setError("Failed to load device settings");
+          setLoading(false);
+          return;
+        }
+
+        // If settings exist, use them; otherwise use defaults with the device's machine_id
+        let deviceSettings: DeviceSettings;
+        if (settingsData) {
+          deviceSettings = {
+            required_payment_amount: settingsData.required_payment_amount,
+            payment_methods: settingsData.payment_methods,
+            machine_id: settingsData.machine_id,
+            smoke_duration: settingsData.smoke_duration,
+            smoke_repeat_every: settingsData.smoke_repeat_every,
+            uv_light_duration: settingsData.uv_light_duration,
+            blower_drying_time: settingsData.blower_drying_time,
+            blower_drying_repeat_every: settingsData.blower_drying_repeat_every,
+            open_door_after: settingsData.open_door_after,
+            timezone: settingsData.timezone,
+          };
+        } else {
+          // No settings yet, use defaults
+          deviceSettings = {
+            ...defaultSettings,
+            machine_id: deviceData.device_reg_id || `MACHINE-${deviceIdString}`,
+          };
+        }
         
-        setSettings(mockSettings);
+        setSettings(deviceSettings);
         
         // Update form values
-        form.reset(mockSettings);
+        form.reset(deviceSettings);
         setLoading(false);
       } catch (err) {
         console.error("Error fetching device:", err);
@@ -152,14 +183,76 @@ export default function DeviceSettingsPage() {
   const onSubmit = async (values: z.infer<typeof settingsFormSchema>) => {
     setSaving(true);
     try {
-      // This would normally call an API to save settings
-      // For now we'll just simulate a successful update
+      // Convert deviceId to string if it's an array or undefined
+      const deviceIdString = deviceId ? (Array.isArray(deviceId) ? deviceId[0] : String(deviceId)) : undefined;
+      
+      if (!deviceIdString) {
+        throw new Error("Device ID is required");
+      }
+      
+      // Check if settings already exist for this device
+      const { data: existingSettings } = await supabase
+        .from("device_settings")
+        .select("id")
+        .eq("device_id", deviceIdString)
+        .single();
+      
+      let saveError;
+      
+      if (existingSettings) {
+        // Update existing settings
+        const { error } = await supabase
+          .from("device_settings")
+          .update({
+            required_payment_amount: values.required_payment_amount,
+            payment_methods: values.payment_methods,
+            machine_id: values.machine_id,
+            smoke_duration: values.smoke_duration,
+            smoke_repeat_every: values.smoke_repeat_every,
+            uv_light_duration: values.uv_light_duration,
+            blower_drying_time: values.blower_drying_time,
+            blower_drying_repeat_every: values.blower_drying_repeat_every,
+            open_door_after: values.open_door_after,
+            timezone: values.timezone,
+            updated_by: user?.erp_user_id
+          })
+          .eq("device_id", deviceIdString);
+          
+        saveError = error;
+      } else {
+        // Insert new settings
+        const { error } = await supabase
+          .from("device_settings")
+          .insert({
+            device_id: deviceIdString,
+            required_payment_amount: values.required_payment_amount,
+            payment_methods: values.payment_methods,
+            machine_id: values.machine_id,
+            smoke_duration: values.smoke_duration,
+            smoke_repeat_every: values.smoke_repeat_every,
+            uv_light_duration: values.uv_light_duration,
+            blower_drying_time: values.blower_drying_time,
+            blower_drying_repeat_every: values.blower_drying_repeat_every,
+            open_door_after: values.open_door_after,
+            timezone: values.timezone,
+            updated_by: user?.erp_user_id
+          });
+          
+        saveError = error;
+      }
+      
+      if (saveError) {
+        console.error("Failed to save settings:", saveError);
+        throw new Error(saveError.message);
+      }
+      
+      // Update local state
       setSettings(values);
       toast.success("Settings updated successfully");
       setActiveTab("view");
     } catch (err) {
       console.error("Failed to update settings:", err);
-      toast.error("Failed to update settings");
+      toast.error(err instanceof Error ? err.message : "Failed to update settings");
     } finally {
       setSaving(false);
     }

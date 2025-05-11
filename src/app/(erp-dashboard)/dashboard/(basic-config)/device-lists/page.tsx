@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import { type DeviceList, columns } from "./device-columns";
+import { useState, useEffect, useCallback } from "react";
+import { type DeviceList, getColumns } from "./device-columns";
 import { DeviceDataTable } from "./device-datatable";
 import Sidebar from "../../../../components/Sidebar";
 import { Button } from "@/components/ui/button";
@@ -15,10 +15,10 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import AddDeviceInfo from "./add-device-info";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import { getDeviceDetails } from "@/lib/hardwareApi";
 import SendTransaction from "@/app/components/SendTransaction";
 import SendStatus from "@/app/components/SendStatus";
 import SendFeedback from "@/app/components/SendFeedback";
+import { supabase } from "@/lib/supabase";
 
 export default function DeviceLists() {
   const router = useRouter();
@@ -34,41 +34,58 @@ export default function DeviceLists() {
     protocolType: "",
   });
 
+  // Function to refresh device data
+  const refreshData = useCallback(async () => {
+    if (!user?.user_client_id) return;
+    
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { data, error } = await supabase
+        .from("device_list")
+        .select(`
+          device_id, 
+          device_name, 
+          device_status, 
+          device_type,
+          protocol_type,
+          customer_nan,
+          device_reg_id,
+          media_configured
+        `)
+        .eq("user_client_id", user.user_client_id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Add missing fields required by the DeviceList interface
+      const formattedData = (data || []).map(device => ({
+        ...device,
+        status: device.device_status === "Enable" ? "Online" : "Offline",
+        maturity_time: new Date().toISOString(),
+        department: "",
+        customer_name: device.customer_nan || ""
+      }));
+      
+      setData(formattedData);
+    } catch (error) {
+      console.error('Error refreshing data:', error);
+      setError("Failed to refresh devices. Please try again later.");
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
       router.push("/");
       return;
     }
 
-    const fetchData = async () => {
-      const token = typeof window !== "undefined" ? localStorage.getItem('auth_token') || '' : '';
-      if (!token) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        setError(null);
-        const result = await getDeviceDetails();
-        if ('error' in result) {
-          throw new Error(result.error);
-        }
-        if (result.data) {
-          setData([result.data]);
-        } else {
-          setData([]);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-        setError("Failed to load devices. Please try again later.");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [user, authLoading, isAuthenticated, router]);
+    refreshData();
+  }, [user, authLoading, isAuthenticated, router, refreshData]);
 
   if (loading) {
     return (
@@ -77,6 +94,9 @@ export default function DeviceLists() {
       </div>
     );
   }
+
+  // Generate columns with router access
+  const columns = getColumns(router, refreshData);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
@@ -179,7 +199,7 @@ export default function DeviceLists() {
                     <DialogHeader>
                       <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-white">New Device Information</DialogTitle>
                     </DialogHeader>
-                    <AddDeviceInfo onClose={() => setIsModalOpen(false)} />
+                    <AddDeviceInfo onClose={() => setIsModalOpen(false)} onDeviceAdded={refreshData} />
                   </DialogContent>
                 </Dialog>
               </div>
@@ -193,12 +213,23 @@ export default function DeviceLists() {
             </CardHeader>
             <CardContent>
               {data.length === 0 ? (
-                <div className="text-center py-8 text-gray-500">
-                  No devices found. Click &quot;New Device Info&quot; to add your first device.
+                <div className="text-center py-8">
+                  <div className="mb-4 text-gray-500">
+                    You don&apos;t have any devices associated with your account.
+                  </div>
+                  <p className="mb-4 text-gray-500">
+                    Click &quot;New Device Info&quot; to add your first device.
+                  </p>
+                  <Button 
+                    onClick={() => setIsModalOpen(true)}
+                    className="bg-green-600 hover:bg-green-700 dark:bg-green-700 dark:hover:bg-green-800 transition-colors"
+                  >
+                    <Plus className="mr-2 h-4 w-4" /> Add New Device
+                  </Button>
                 </div>
               ) : (
                 <div>
-              <DeviceDataTable columns={columns} data={data} />
+                  <DeviceDataTable columns={columns} data={data} />
                   <div className="mt-8 space-y-8">
                     {data.map(device => (
                       <Card key={device.device_id} className="p-4 bg-gray-50 dark:bg-gray-900">
