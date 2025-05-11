@@ -67,7 +67,7 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
       
       const result = await uploadAsset(formData);
       if (result.error) throw new Error(result.error);
-      
+
       // Update status to complete
       if (type === "logo") setCompanyLogo((prev) => ({ ...prev!, status: "complete" }))
       else if (type === "video") setVideoAd((prev) => ({ ...prev!, status: "complete" }))
@@ -155,7 +155,7 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
       if (result.error) throw new Error(result.error);
 
       const mediaFiles = result.data || [];
-      
+
       // Verify all required media types are present
       const hasLogo = mediaFiles.some((file: MediaFile) => file.file_type === 'logo');
       const hasVideo = mediaFiles.some((file: MediaFile) => file.file_type === 'video');

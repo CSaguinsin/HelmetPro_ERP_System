@@ -23,23 +23,23 @@ export default function AddDeviceInfo({ onClose }: AddDeviceInfoProps) {
         console.error("No authenticated user found.");
         return;
       }
-
+  
       try {
         setLoading(true);
-        const { data, error } = await supabase
-          .from("user_clients")
-          .select("user_client_id")
-          .eq("erp_user_id", user.id)
+      const { data, error } = await supabase
+        .from("user_clients")
+        .select("user_client_id")
+        .eq("erp_user_id", user.id)
           .maybeSingle();
-
-        if (error) {
-          console.error("Error fetching user_client_id:", error);
+  
+      if (error) {
+        console.error("Error fetching user_client_id:", error);
           toast.error("Error fetching user information");
-        } else if (!data) {
-          console.warn("No user_client_id found for the authenticated user.");
+      } else if (!data) {
+        console.warn("No user_client_id found for the authenticated user.");
           toast.error("User information not found");
-        } else {
-          setUserClientId(data.user_client_id);
+      } else {
+        setUserClientId(data.user_client_id);
         }
       } catch (error) {
         console.error("Unexpected error:", error);
@@ -48,7 +48,7 @@ export default function AddDeviceInfo({ onClose }: AddDeviceInfoProps) {
         setLoading(false);
       }
     };
-
+  
     fetchUserClientId();
   }, [user]);
 
@@ -70,28 +70,28 @@ export default function AddDeviceInfo({ onClose }: AddDeviceInfoProps) {
 
     try {
       setLoading(true);
-      const { error } = await supabase.from("device_list").insert([
-        {
-          device_id: deviceUUID,
-          user_client_id: userClientId,
-          device_name: "Generated Device",
-          device_status: "Enable",
-          device_type: "Smart storage locker with screen",
-          status: "Offline",
-          protocol_type: "MQTT",
-          maturity_time: new Date().toISOString(),
-          department: "Logistics",
-          customer_name: "Client A",
-          device_reg_id: `DEV-${Math.floor(Math.random() * 10000)}`
-        }
-      ]);
+    const { error } = await supabase.from("device_list").insert([
+      {
+        device_id: deviceUUID,
+        user_client_id: userClientId,
+        device_name: "Generated Device",
+        device_status: "Enable",
+        device_type: "Smart storage locker with screen",
+        status: "Offline",
+        protocol_type: "MQTT",
+        maturity_time: new Date().toISOString(),
+        department: "Logistics",
+        customer_name: "Client A",
+        device_reg_id: `DEV-${Math.floor(Math.random() * 10000)}`
+      }
+    ]);
 
-      if (error) {
-        console.error("Error inserting device:", error);
-        toast.error("Error saving device!");
-      } else {
-        toast.success("Device saved successfully!");
-        onClose();
+    if (error) {
+      console.error("Error inserting device:", error);
+      toast.error("Error saving device!");
+    } else {
+      toast.success("Device saved successfully!");
+      onClose();
       }
     } catch (error) {
       console.error("Unexpected error:", error);

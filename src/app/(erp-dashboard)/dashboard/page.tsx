@@ -10,6 +10,7 @@ import DeviceStateCard from "../../components/DeviceStateCard";
 import OperatingStatusCard from "../../components/OperatingStatusCard";
 import DeviceEndateCard from "../../components/DeviceEndateCard";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 
 // ✅ Type Definitions
 type Device = {
@@ -187,7 +188,6 @@ export default function DashboardPage() {
                       className={`card relative p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer ${
                         device.is_mobile_logged_in ? 'border-2 border-green-500' : 'border border-gray-200'
                       }`}
-                      onClick={() => router.push(`/dashboard/machine-images/${device.device_id}`)}
                     >
                       {device.is_mobile_logged_in && (
                         <div className="absolute top-2 right-2 flex items-center space-x-1">
@@ -199,6 +199,27 @@ export default function DashboardPage() {
                       <p className="text-sm text-gray-600">Status: {device.device_status}</p>
                       <p className="text-sm text-gray-600">Protocol: {device.protocol_type}</p>
                       <p className="text-sm text-gray-600">Customer: {device.customer_nan}</p>
+                      <div className="mt-3 flex justify-between">
+                        <Button 
+                          size="sm" 
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/machine-images/${device.device_id}`);
+                          }}
+                        >
+                          View Images
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            router.push(`/dashboard/device-settings/${device.device_id}`);
+                          }}
+                        >
+                          Settings
+                        </Button>
+                      </div>
                     </div>
                   ))}
                 </div>

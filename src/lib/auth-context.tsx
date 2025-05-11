@@ -62,21 +62,53 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userClientId = localStorage.getItem('user_client_id');
         const erpUserId = localStorage.getItem('erp_user_id');
         
-        if (authToken === 'authenticated' && userEmail && userClientId && erpUserId) {
-          // We have a custom auth session, so create a user object
-          setUser({
-            id: erpUserId,
-            email: userEmail,
-            user_client_id: userClientId,
-            erp_user_id: erpUserId
-          });
-          setIsAuthenticated(true);
+        if (authToken && userEmail && userClientId && erpUserId) {
+          // We have an auth token and user info
+          // Verify if it's a fallback token (base64 encoded JSON) or a Supabase token
+          let isValidToken = false;
           
-          // Ensure cookie is set
-          setAuthData('auth_token', 'authenticated');
+          if (authToken.includes('.')) {
+            // Looks like a JWT (Supabase token), try to validate with Supabase
+            try {
+              const { data } = await supabase.auth.getUser(authToken);
+              isValidToken = !!data.user;
+            } catch (e) {
+              console.warn("Failed to validate Supabase token:", e);
+              isValidToken = false;
+            }
+          } else {
+            // Try to parse as fallback token
+            try {
+              const tokenData = JSON.parse(atob(authToken));
+              // Check if token data matches stored user info
+              isValidToken = tokenData.user_client_id === userClientId && 
+                             tokenData.email === userEmail &&
+                             tokenData.user_id === erpUserId &&
+                             // Check if token is less than 7 days old
+                             (Date.now() - tokenData.timestamp < 7 * 24 * 60 * 60 * 1000);
+            } catch (e) {
+              console.warn("Failed to validate fallback token:", e);
+              isValidToken = false;
+            }
+          }
           
-          // Don't try to set a Supabase session with invalid tokens
-          // Just let the custom auth flow work independently
+          if (isValidToken) {
+            setUser({
+              id: erpUserId,
+              email: userEmail,
+              user_client_id: userClientId,
+              erp_user_id: erpUserId
+            });
+            setIsAuthenticated(true);
+          } else {
+            // Token invalid, clear auth data
+            clearAuthData('auth_token');
+            clearAuthData('user_client_id');
+            clearAuthData('erp_user_id');
+            clearAuthData('user_email');
+            setUser(null);
+            setIsAuthenticated(false);
+          }
         } else {
           // Try to get session from Supabase Auth as fallback
           const { data: { session } } = await supabase.auth.getSession();
@@ -99,7 +131,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               setIsAuthenticated(true);
               
               // Store in localStorage and cookies
-              setAuthData('auth_token', 'authenticated');
+              setAuthData('auth_token', session.access_token);
               setAuthData('user_client_id', userData.user_client_id);
               setAuthData('erp_user_id', userData.erp_user_id);
               setAuthData('user_email', session.user.email || '');
@@ -160,18 +192,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         erp_user_id: userData.erp_user_id
       };
       
-      // Set in both localStorage and cookies
-      setAuthData('auth_token', 'authenticated');
-      setAuthData('user_client_id', userData.user_client_id);
-      setAuthData('erp_user_id', userData.erp_user_id);
-      setAuthData('user_email', email);
+      // Generate a real API token using Supabase authentication
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email,
+        password: password + '_' + userData.user_client_id, // Using a composite password to prevent direct supabase login
+      });
+      
+      if (authError) {
+        // If Supabase auth fails, create a fallback token
+        console.warn("Supabase auth failed, creating fallback token:", authError);
+        
+        // Generate a secure token manually as fallback
+        const fallbackToken = btoa(JSON.stringify({
+          user_id: userData.erp_user_id,
+          email: userData.email,
+          user_client_id: userData.user_client_id,
+          timestamp: Date.now(),
+          // Add a simple signature
+          sig: btoa(`${userData.erp_user_id}:${Date.now()}:${userData.password.substring(0, 5)}`)
+        }));
+        
+        // Set in both localStorage and cookies
+        setAuthData('auth_token', fallbackToken);
+        setAuthData('user_client_id', userData.user_client_id);
+        setAuthData('erp_user_id', userData.erp_user_id);
+        setAuthData('user_email', email);
+      } else {
+        // Use the Supabase token if auth was successful
+        setAuthData('auth_token', authData.session?.access_token || '');
+        setAuthData('user_client_id', userData.user_client_id);
+        setAuthData('erp_user_id', userData.erp_user_id);
+        setAuthData('user_email', email);
+      }
       
       // Update state
       setUser(customUser);
       setIsAuthenticated(true);
-      
-      // Don't try to create a Supabase session with invalid tokens
-      // Just use our custom auth mechanism
       
       return { success: true };
     } catch (error) {

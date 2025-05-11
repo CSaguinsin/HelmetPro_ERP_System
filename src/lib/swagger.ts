@@ -53,18 +53,25 @@ export const getApiDocs = () => {
       '/api/hardware/login': {
         post: {
           tags: ['Authentication'],
-          summary: 'Login a device',
-          description: 'Authenticate a hardware device and get an access token',
+          summary: 'Login a device or user',
+          description: 'Authenticate a hardware device or user and get an access token',
           requestBody: {
             content: {
               'application/json': {
                 schema: {
                   type: 'object',
                   properties: {
-                    username: { type: 'string' },
+                    username: { 
+                      type: 'string',
+                      description: 'Either username or email is required'
+                    },
+                    email: { 
+                      type: 'string',
+                      description: 'Either username or email is required'
+                    },
                     password: { type: 'string' },
                   },
-                  required: ['username', 'password'],
+                  required: ['password'],
                 },
               },
             },

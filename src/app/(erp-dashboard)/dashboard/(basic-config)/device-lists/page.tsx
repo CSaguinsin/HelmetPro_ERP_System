@@ -198,7 +198,7 @@ export default function DeviceLists() {
                 </div>
               ) : (
                 <div>
-                  <DeviceDataTable columns={columns} data={data} />
+              <DeviceDataTable columns={columns} data={data} />
                   <div className="mt-8 space-y-8">
                     {data.map(device => (
                       <Card key={device.device_id} className="p-4 bg-gray-50 dark:bg-gray-900">

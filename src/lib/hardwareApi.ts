@@ -39,7 +39,26 @@ export interface ApiResponse<T> {
 // Helper function to get auth token
 const getAuthToken = (): string => {
   if (typeof window === "undefined") return '';
-  return localStorage.getItem('auth_token') || '';
+  
+  const token = localStorage.getItem('auth_token') || '';
+  if (!token) return '';
+  
+  // For API calls, we need to include the user_client_id in the request headers
+  // if the token is our custom fallback token, extract the user_client_id
+  if (!token.includes('.')) {
+    try {
+      // Try to parse as our fallback token
+      const tokenData = JSON.parse(atob(token));
+      // Add user_client_id to a separate localStorage item for API calls
+      if (tokenData.user_client_id) {
+        localStorage.setItem('api_user_client_id', tokenData.user_client_id);
+      }
+    } catch (e) {
+      console.warn("Failed to parse fallback token", e);
+    }
+  }
+  
+  return token;
 };
 
 // Helper function to make API calls
@@ -52,12 +71,30 @@ const apiCall = async <T>(
     const token = getAuthToken();
     if (!token) throw new Error('No authentication token found');
 
+    // Create headers with the correct authorization format
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Use different auth header format based on token type
+    if (token.includes('.')) {
+      // JWT token from Supabase - use Bearer format
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Our fallback token - use custom header
+      headers['access_token'] = token;
+      
+      // Also add user_client_id for additional verification
+      const userClientId = localStorage.getItem('api_user_client_id') || 
+                          localStorage.getItem('user_client_id');
+      if (userClientId) {
+        headers['x-user-client-id'] = userClientId;
+      }
+    }
+
     const response = await fetch(`/api/hardware/${endpoint}`, {
       method,
-      headers: {
-        'access_token': token,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: body ? JSON.stringify(body) : undefined,
     });
 
@@ -71,8 +108,12 @@ const apiCall = async <T>(
 };
 
 // Device Details API
-export const getDeviceDetails = async (): Promise<ApiResponse<DeviceDetails>> => {
-  return apiCall<DeviceDetails>('device-details');
+export const getDeviceDetails = async (deviceId?: string | number): Promise<ApiResponse<DeviceDetails>> => {
+  let endpoint = 'device-details';
+  if (deviceId) {
+    endpoint += `?device_id=${deviceId}`;
+  }
+  return apiCall<DeviceDetails>(endpoint);
 };
 
 // Assets API
@@ -85,9 +126,28 @@ export const uploadAsset = async (formData: FormData): Promise<ApiResponse<Media
   if (!token) throw new Error('No authentication token found');
 
   try {
+    // Create headers with the correct authorization format
+    const headers: Record<string, string> = {};
+    
+    // Use different auth header format based on token type
+    if (token.includes('.')) {
+      // JWT token from Supabase - use Bearer format
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Our fallback token - use custom header
+      headers['access_token'] = token;
+      
+      // Also add user_client_id for additional verification
+      const userClientId = localStorage.getItem('api_user_client_id') || 
+                          localStorage.getItem('user_client_id');
+      if (userClientId) {
+        headers['x-user-client-id'] = userClientId;
+      }
+    }
+
     const response = await fetch('/api/hardware/assets', {
       method: 'POST',
-      headers: { 'access_token': token },
+      headers,
       body: formData,
     });
 

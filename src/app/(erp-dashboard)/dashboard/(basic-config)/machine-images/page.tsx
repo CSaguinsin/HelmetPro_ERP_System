@@ -66,12 +66,12 @@ export default function MachineImagesPage() {
   }
 
   if (!deviceId) {
-    return (
+  return (
       <div className="flex flex-col items-center justify-center h-screen">
         <div className="text-gray-500 mb-4">No device found</div>
         <Button onClick={() => router.push('/dashboard')}>Return to Dashboard</Button>
-      </div>
-    );
+    </div>
+  );
   }
 
   return <MediaUploadComponent deviceId={deviceId} />;

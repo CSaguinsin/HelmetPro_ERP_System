@@ -42,6 +42,7 @@ const menuItems: MenuItem[] = [
       { title: "Commodity Category Setting", href: "/dashboard/commodity-category-settings" },
       { title: "Set Material Info", href: "/dashboard/set-material-info" },
       { title: "Add or Edit Machine Images", href: "/dashboard/machine-images" },
+      { title: "Vendo Settings", href: "/dashboard/device-settings" },
     ],
   },
   {
