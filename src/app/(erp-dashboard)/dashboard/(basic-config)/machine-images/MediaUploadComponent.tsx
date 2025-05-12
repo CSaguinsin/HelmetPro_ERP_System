@@ -54,7 +54,7 @@ export default function MediaUploadComponent({
   const [isSaving, setIsSaving] = useState(false)
   const [deviceDetails, setDeviceDetails] = useState<{name: string; status: string} | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const { loading: authLoading, isAuthenticated } = useAuth()
+  const { loading: authLoading, isAuthenticated, user } = useAuth()
 
   // Check authentication state
   useEffect(() => {
@@ -71,13 +71,29 @@ export default function MediaUploadComponent({
     const fetchDeviceDetails = async () => {
       try {
         setIsLoading(true);
+        
+        // Ensure user is available
+        if (!user?.user_client_id) {
+          throw new Error("User not authenticated");
+        }
+        
         const { data, error } = await supabase
           .from("device_list")
           .select("device_name, device_status, device_reg_id")
           .eq("device_id", deviceId)
+          .eq("user_client_id", user.user_client_id)
           .single();
           
-        if (error) throw error;
+        if (error || !data) {
+          // Device not found or doesn't belong to this user
+          toast({
+            title: "Access Denied",
+            description: "You don't have permission to access this device.",
+            variant: "destructive"
+          });
+          router.push('/dashboard/machine-images');
+          return;
+        }
         
         setDeviceDetails({
           name: data.device_name || data.device_reg_id || `Device ID: ${deviceId}`,
@@ -85,13 +101,14 @@ export default function MediaUploadComponent({
         });
       } catch (err) {
         console.error("Error fetching device details:", err);
+        router.push('/dashboard/machine-images');
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchDeviceDetails();
-  }, [deviceId, authLoading]);
+  }, [deviceId, authLoading, user, router]);
 
   const handleUpload = async (file: File, type: "logo" | "video" | "image") => {
     const fileData: FileWithPreview = {
@@ -260,6 +277,11 @@ export default function MediaUploadComponent({
     
     const fetchAssets = async () => {
       try {
+        // Clear existing media states to prevent duplications
+        setCompanyLogo(null);
+        setVideoAd(null);
+        setCompanyImages([]);
+        
         // Store the device ID in localStorage temporarily so API calls will include it
         if (deviceId) {
           localStorage.setItem('device_info', JSON.stringify({ device_id: deviceId }));
@@ -271,20 +293,42 @@ export default function MediaUploadComponent({
         
         const mediaFiles = result.data || [];
         
+        // Group files by type to avoid adding multiple files of the same type
+        const logoFile = mediaFiles.find((file: MediaFile) => file.file_type === 'logo');
+        const videoFile = mediaFiles.find((file: MediaFile) => file.file_type === 'video');
+        const imageFiles = mediaFiles.filter((file: MediaFile) => file.file_type === 'image');
+        
         // Update state with existing media files
-        mediaFiles.forEach((file: MediaFile) => {
-          const fileData: FileWithPreview = {
+        if (logoFile) {
+          setCompanyLogo({
+            id: crypto.randomUUID(),
+            file: new File([], logoFile.file_name),
+            preview: logoFile.file_url,
+            progress: 100,
+            status: "complete"
+          });
+        }
+        
+        if (videoFile) {
+          setVideoAd({
+            id: crypto.randomUUID(),
+            file: new File([], videoFile.file_name),
+            preview: videoFile.file_url,
+            progress: 100,
+            status: "complete"
+          });
+        }
+        
+        if (imageFiles.length > 0) {
+          const imageFilesData = imageFiles.map((file: MediaFile) => ({
             id: crypto.randomUUID(),
             file: new File([], file.file_name),
             preview: file.file_url,
             progress: 100,
-            status: "complete"
-          };
-          
-          if (file.file_type === 'logo') setCompanyLogo(fileData);
-          else if (file.file_type === 'video') setVideoAd(fileData);
-          else if (file.file_type === 'image') setCompanyImages(prev => [...prev, fileData]);
-        });
+            status: "complete" as const
+          }));
+          setCompanyImages(imageFilesData);
+        }
       } catch (error) {
         console.error('Error fetching assets:', error);
       }

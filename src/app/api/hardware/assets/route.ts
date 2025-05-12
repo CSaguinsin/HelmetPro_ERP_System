@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyHardwareAuth } from "@/lib/hardware-auth";
 import { supabase } from "@/lib/supabase";
+import { createClient } from "@supabase/supabase-js";
 
 // Sample assets data for testing
 const sampleAssets = [
@@ -318,6 +319,13 @@ export async function POST(req: NextRequest): Promise<Response> {
 
 async function handleFileUpload(req: NextRequest): Promise<Response> {
   try {
+    // First verify authentication
+    const { authenticated, response, user } = await verifyHardwareAuth(req);
+    
+    if (!authenticated || !user) {
+      return response || NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const type = formData.get("type") as string;
@@ -336,6 +344,20 @@ async function handleFileUpload(req: NextRequest): Promise<Response> {
       }, { status: 400 });
     }
     
+    // Check if the device belongs to the user
+    const { data: deviceData, error: deviceError } = await supabase
+      .from("device_list")
+      .select("device_id")
+      .eq("device_id", deviceId)
+      .eq("user_client_id", user.user_client_id)
+      .single();
+    
+    if (deviceError || !deviceData) {
+      return NextResponse.json({ 
+        error: "You don't have permission to upload files for this device" 
+      }, { status: 403 });
+    }
+    
     // Generate a unique filename with the correct path structure
     // Path in storage: media/[deviceId]/filename
     const storagePath = `media/${deviceId}/${file.name}`;
@@ -346,9 +368,22 @@ async function handleFileUpload(req: NextRequest): Promise<Response> {
     // Use the existing bucket - don't try to create it
     const bucketName = "vending-media";
     
-    // Upload file to Supabase Storage
     try {
-      const { error: uploadError } = await supabase.storage
+      // Create a service role client that bypasses RLS
+      // This is implemented within the API route, not exposing admin credentials to the client
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE || '',
+        {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        }
+      );
+      
+      // Upload file to Supabase Storage using admin client
+      const { error: uploadError } = await supabaseAdmin.storage
         .from(bucketName)
         .upload(storagePath, file, {
           cacheControl: "3600",
@@ -361,12 +396,12 @@ async function handleFileUpload(req: NextRequest): Promise<Response> {
       }
       
       // Get the public URL for the file
-      supabase.storage
+      const { data: urlData } = supabaseAdmin.storage
         .from(bucketName)
         .getPublicUrl(storagePath);
       
-      // Save the reference in database
-      const { data: mediaRecord, error: dbError } = await supabase
+      // Save the reference in database using admin client
+      const { data: mediaRecord, error: dbError } = await supabaseAdmin
         .from("media_files")
         .insert({
           device_id: deviceId,
@@ -382,7 +417,7 @@ async function handleFileUpload(req: NextRequest): Promise<Response> {
       
       if (dbError) {
         console.error("Database insert error:", dbError);
-        return NextResponse.json({ error: "Failed to save file reference" }, { status: 500 });
+        return NextResponse.json({ error: "Failed to save file reference: " + dbError.message }, { status: 500 });
       }
       
       return NextResponse.json({ 
@@ -391,7 +426,7 @@ async function handleFileUpload(req: NextRequest): Promise<Response> {
           id: mediaRecord.media_id,
           file_type: mediaRecord.file_type,
           file_name: file.name,
-          file_url: mediaRecord.file_url
+          file_url: urlData.publicUrl || mediaRecord.file_url
         }
       }, { status: 200 });
     } catch (uploadError) {

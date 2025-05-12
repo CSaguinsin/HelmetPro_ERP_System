@@ -34,7 +34,7 @@ export default function MachineImagesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const router = useRouter();
-  const { loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated, user } = useAuth();
 
   useEffect(() => {
     // Don't fetch devices until auth loading is complete
@@ -51,10 +51,18 @@ export default function MachineImagesPage() {
         setLoading(true);
         setError(null);
         
-        // Fetch all devices for this user from Supabase
+        // Only fetch devices for the current user
+        if (!user?.user_client_id) {
+          setDevices([]);
+          setFilteredDevices([]);
+          return;
+        }
+        
+        // Fetch devices for this user from Supabase
         const { data, error } = await supabase
           .from("device_list")
-          .select("*");
+          .select("*")
+          .eq("user_client_id", user.user_client_id);
         
         if (error) throw error;
         
@@ -83,7 +91,7 @@ export default function MachineImagesPage() {
     };
 
     fetchDevices();
-  }, [authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router, user]);
 
   // Handle search and filter
   useEffect(() => {

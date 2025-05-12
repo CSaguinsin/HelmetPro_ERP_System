@@ -155,44 +155,80 @@ export const getDeviceDetails = async (deviceId?: string | number): Promise<ApiR
 // Assets API
 export const getAssets = async (): Promise<ApiResponse<MediaFile[]>> => {
   try {
+    // Get auth token
+    const token = getAuthToken();
+    if (!token) return { error: 'No authentication token found' };
+    
+    // Create headers with the correct authorization format
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Use different auth header format based on token type
+    if (token.includes('.')) {
+      // JWT token from Supabase - use Bearer format
+      headers['Authorization'] = `Bearer ${token}`;
+    } else {
+      // Our fallback token - use custom header
+      headers['access_token'] = token;
+    }
+    
+    // Add user_client_id for additional verification
+    const userClientId = localStorage.getItem('api_user_client_id') || 
+                         localStorage.getItem('user_client_id');
+    if (userClientId) {
+      headers['x-user-client-id'] = userClientId;
+    }
+    
+    // Add device info if available
     const deviceInfoStr = localStorage.getItem('device_info');
-    const endpoint = deviceInfoStr 
-      ? `assets?deviceId=${JSON.parse(deviceInfoStr).device_id}`
-      : 'assets';
-    
-    // Directly get response and handle types explicitly to avoid typing issues
-    const response = await fetch(`/api/hardware/${endpoint}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'access_token': getAuthToken() || '',
-      },
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      return { error: errorData.error || 'Failed to fetch assets' };
+    if (deviceInfoStr) {
+      try {
+        const deviceInfo = JSON.parse(deviceInfoStr);
+        headers['x-device-info'] = deviceInfoStr;
+        
+        // Set up endpoint with deviceId as query parameter
+        const endpoint = `assets?deviceId=${deviceInfo.device_id}`;
+        
+        // Make the request
+        const response = await fetch(`/api/hardware/${endpoint}`, {
+          method: 'GET',
+          headers,
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Asset fetch error:', errorData);
+          return { error: errorData.error || `Failed to fetch assets: ${response.status}` };
+        }
+        
+        const result = await response.json();
+        
+        // Handle both old and new response formats
+        if (result.data) {
+          // New format - direct data array
+          return { data: Array.isArray(result.data) ? result.data as MediaFile[] : [] };
+        } else if (result.assets) {
+          // Old format - assets array
+          const mappedAssets = result.assets.map((asset: { id: string; type: string; name: string; url: string }) => ({
+            id: asset.id,
+            file_type: asset.type,
+            file_name: asset.name,
+            file_url: asset.url
+          }));
+          return { data: mappedAssets };
+        }
+        
+        // Fallback - empty array
+        return { data: [] };
+      } catch (parseError) {
+        console.error('Failed to parse device info:', parseError);
+        return { error: 'Invalid device info format' };
+      }
+    } else {
+      // No device info available
+      return { data: [] };
     }
-    
-    const result = await response.json();
-    
-    // Handle both old and new response formats
-    if (result.data) {
-      // New format - direct data array
-      return { data: Array.isArray(result.data) ? result.data as MediaFile[] : [] };
-    } else if (result.assets) {
-      // Old format - assets array
-      const mappedAssets = result.assets.map((asset: { id: string; type: string; name: string; url: string }) => ({
-        id: asset.id,
-        file_type: asset.type,
-        file_name: asset.name,
-        file_url: asset.url
-      }));
-      return { data: mappedAssets };
-    }
-    
-    // Fallback - empty array
-    return { data: [] };
   } catch (error) {
     console.error('Error fetching assets:', error);
     return { error: error instanceof Error ? error.message : 'Failed to fetch assets' };
@@ -229,6 +265,7 @@ export const uploadAsset = async (formData: FormData): Promise<ApiResponse<Media
       }
     }
 
+    // Use the standard hardware/assets endpoint as specified in requirements
     const response = await fetch('/api/hardware/assets', {
       method: 'POST',
       headers,

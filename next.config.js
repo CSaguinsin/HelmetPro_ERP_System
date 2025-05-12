@@ -16,6 +16,10 @@ const nextConfig = {
   webpack: (config) => {
     config.resolve.alias['@'] = path.join(__dirname, 'src');
     return config;
+  },
+  // Add image domains configuration for Supabase storage
+  images: {
+    domains: ['ujucmvhsrykqigzolxoq.supabase.co'],
   }
 };
 

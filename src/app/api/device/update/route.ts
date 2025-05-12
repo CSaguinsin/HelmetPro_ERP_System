@@ -45,10 +45,7 @@ export async function PUT(req: NextRequest): Promise<Response> {
       return NextResponse.json({ error: "No fields to update" }, { status: 400 });
     }
     
-    // Add updated_at timestamp
-    updateData.updated_at = new Date().toISOString();
-    
-    // Update the device in the database
+    // Update the device in the database - don't add updated_at as it doesn't exist in the schema
     const { data, error } = await supabase
       .from("device_list")
       .update(updateData)
@@ -57,7 +54,7 @@ export async function PUT(req: NextRequest): Promise<Response> {
     
     if (error) {
       console.error("Error updating device:", error);
-      return NextResponse.json({ error: "Failed to update device" }, { status: 500 });
+      return NextResponse.json({ error: "Failed to update device: " + error.message }, { status: 500 });
     }
     
     // Return success response with updated device data
