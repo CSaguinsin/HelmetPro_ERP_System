@@ -54,7 +54,7 @@ export default function MediaUploadComponent({
   const [isSaving, setIsSaving] = useState(false)
   const [deviceDetails, setDeviceDetails] = useState<{name: string; status: string} | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const { user, loading: authLoading, isAuthenticated } = useAuth()
+  const { loading: authLoading, isAuthenticated } = useAuth()
 
   // Check authentication state
   useEffect(() => {
@@ -333,7 +333,8 @@ export default function MediaUploadComponent({
                   <div className="flex items-center gap-2 mt-1 text-gray-600 dark:text-gray-300">
                     <span>Device: <span className="font-medium">{deviceDetails.name}</span></span>
                     <Badge 
-                      variant={deviceDetails.status === 'Enable' || deviceDetails.status === 'active' ? 'success' : 'default'}
+                      variant="default" 
+                      className={deviceDetails.status === 'Enable' || deviceDetails.status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
                     >
                       {deviceDetails.status === 'Enable' || deviceDetails.status === 'active' ? 'Active' : 'Inactive'}
                     </Badge>

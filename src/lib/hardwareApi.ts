@@ -159,25 +159,36 @@ export const getAssets = async (): Promise<ApiResponse<MediaFile[]>> => {
     const endpoint = deviceInfoStr 
       ? `assets?deviceId=${JSON.parse(deviceInfoStr).device_id}`
       : 'assets';
-      
-    const result = await apiCall<any>(endpoint);
+    
+    // Directly get response and handle types explicitly to avoid typing issues
+    const response = await fetch(`/api/hardware/${endpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'access_token': getAuthToken() || '',
+      },
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData.error || 'Failed to fetch assets' };
+    }
+    
+    const result = await response.json();
     
     // Handle both old and new response formats
     if (result.data) {
       // New format - direct data array
-      return { data: result.data };
+      return { data: Array.isArray(result.data) ? result.data as MediaFile[] : [] };
     } else if (result.assets) {
       // Old format - assets array
-      const mappedAssets = result.assets.map((asset: any) => ({
+      const mappedAssets = result.assets.map((asset: { id: string; type: string; name: string; url: string }) => ({
         id: asset.id,
         file_type: asset.type,
         file_name: asset.name,
         file_url: asset.url
       }));
       return { data: mappedAssets };
-    } else if (result.error) {
-      // Error response
-      return { error: result.error };
     }
     
     // Fallback - empty array

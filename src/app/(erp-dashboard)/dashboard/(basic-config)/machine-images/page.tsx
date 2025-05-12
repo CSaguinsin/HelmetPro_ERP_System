@@ -9,7 +9,7 @@ import { supabase } from "@/lib/supabase"
 import { useAuth } from "@/lib/auth-context"
 import Sidebar from "../../../../components/Sidebar"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Menu, Search, ImageIcon, FileVideo, CheckCircle2 } from "lucide-react"
+import { Menu, CheckCircle2 } from "lucide-react"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -34,7 +34,7 @@ export default function MachineImagesPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [typeFilter, setTypeFilter] = useState("all");
   const router = useRouter();
-  const { user, loading: authLoading, isAuthenticated } = useAuth();
+  const { loading: authLoading, isAuthenticated } = useAuth();
 
   useEffect(() => {
     // Don't fetch devices until auth loading is complete
@@ -51,16 +51,10 @@ export default function MachineImagesPage() {
         setLoading(true);
         setError(null);
         
-        if (!user?.user_client_id) {
-          setError("No user ID found. Please try logging in again.");
-          return;
-        }
-        
         // Fetch all devices for this user from Supabase
         const { data, error } = await supabase
           .from("device_list")
-          .select("*")
-          .eq("user_client_id", user.user_client_id);
+          .select("*");
         
         if (error) throw error;
         
@@ -89,7 +83,7 @@ export default function MachineImagesPage() {
     };
 
     fetchDevices();
-  }, [user, authLoading, isAuthenticated, router]);
+  }, [authLoading, isAuthenticated, router]);
 
   // Handle search and filter
   useEffect(() => {
@@ -274,7 +268,8 @@ export default function MachineImagesPage() {
                           </TableCell>
                           <TableCell>
                             <Badge 
-                              variant={device.device_status === 'Enable' || device.device_status === 'active' ? 'success' : 'default'}
+                              variant="default"
+                              className={device.device_status === 'Enable' || device.device_status === 'active' ? 'bg-green-500 hover:bg-green-600' : ''}
                             >
                               {device.device_status === 'Enable' || device.device_status === 'active' ? 'Active' : 'Inactive'}
                             </Badge>

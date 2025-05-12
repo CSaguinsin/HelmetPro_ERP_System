@@ -35,7 +35,7 @@ export async function PUT(req: NextRequest): Promise<Response> {
     }
     
     // Update the device record with the new media_configured flag
-    const updateData: any = {};
+    const updateData: Record<string, unknown> = {};
     if (media_configured !== undefined) {
       updateData.media_configured = media_configured;
     }

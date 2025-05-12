@@ -348,7 +348,7 @@ async function handleFileUpload(req: NextRequest): Promise<Response> {
     
     // Upload file to Supabase Storage
     try {
-      const { data: uploadData, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from(bucketName)
         .upload(storagePath, file, {
           cacheControl: "3600",
@@ -361,7 +361,7 @@ async function handleFileUpload(req: NextRequest): Promise<Response> {
       }
       
       // Get the public URL for the file
-      const { data: publicUrl } = supabase.storage
+      supabase.storage
         .from(bucketName)
         .getPublicUrl(storagePath);
       
