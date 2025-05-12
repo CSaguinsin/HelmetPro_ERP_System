@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyHardwareAuth } from "@/lib/hardware-auth";
-import { supabase } from "@/lib/supabase";
+import { createClient } from '@supabase/supabase-js';
 
 // Define firmware type for better type safety
 interface FirmwareInfo {
@@ -8,6 +8,24 @@ interface FirmwareInfo {
   bin_url: string;
   md5_hash: string;
   release_notes: string;
+}
+
+// Helper function to compare version strings
+function compareVersions(v1: string, v2: string): number {
+  // Simple version comparison function
+  const v1Parts = v1.replace(/[^0-9.]/g, '').split('.').map(Number);
+  const v2Parts = v2.replace(/[^0-9.]/g, '').split('.').map(Number);
+  
+  // Compare each part
+  for (let i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
+    const v1Part = v1Parts[i] || 0;
+    const v2Part = v2Parts[i] || 0;
+    
+    if (v1Part > v2Part) return 1;
+    if (v1Part < v2Part) return -1;
+  }
+  
+  return 0; // Versions are equal
 }
 
 /**
@@ -64,40 +82,60 @@ export async function GET(req: NextRequest): Promise<Response> {
       return NextResponse.json({ error: "Current firmware version is required" }, { status: 400 });
     }
 
+    // Use service role client for more reliable access
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE || '',
+      {
+        auth: {
+          autoRefreshToken: false,
+          persistSession: false
+        }
+      }
+    );
+
     // Get the latest firmware for this device model
-    const { data: firmware, error } = await supabase
+    const { data: firmwareVersions, error } = await supabaseAdmin
       .from("firmware")
       .select("*")
       .eq("device_model", device.model)
-      .gt("release_date", new Date().toISOString()) // Only future or current releases
-      .order("version", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+      .order("release_date", { ascending: false });
 
     if (error) {
+      console.error("Error fetching firmware:", error);
       return NextResponse.json({ error: "Failed to fetch firmware information" }, { status: 500 });
     }
 
+    if (!firmwareVersions || firmwareVersions.length === 0) {
+      return new NextResponse(null, { status: 204 }); // No firmware available
+    }
+
+    // Find the latest version that is newer than the current version
+    const newerFirmware = firmwareVersions.find(fw => 
+      compareVersions(fw.version, currentVersion) > 0
+    );
+
     // Check if update is needed
-    if (!firmware || firmware.version === currentVersion) {
+    if (!newerFirmware) {
       return new NextResponse(null, { status: 204 }); // No update available
     }
 
     // Generate signed URL for the firmware file
-    const { data: urlData } = await supabase.storage
+    const { data: urlData, error: urlError } = await supabaseAdmin.storage
       .from("firmware")
-      .createSignedUrl(firmware.file_path, 60 * 60); // 1 hour expiry
+      .createSignedUrl(newerFirmware.file_path, 60 * 60); // 1 hour expiry
 
-    if (!urlData?.signedUrl) {
+    if (urlError || !urlData?.signedUrl) {
+      console.error("Error generating signed URL:", urlError);
       return NextResponse.json({ error: "Failed to generate firmware download URL" }, { status: 500 });
     }
 
     // Return firmware info
     return NextResponse.json({
-      version: firmware.version,
+      version: newerFirmware.version,
       bin_url: urlData.signedUrl,
-      md5_hash: firmware.md5_hash,
-      release_notes: firmware.release_notes
+      md5_hash: newerFirmware.md5_hash,
+      release_notes: newerFirmware.release_notes
     } as FirmwareInfo, { status: 200 });
   } catch (err) {
     console.error("Error fetching firmware:", err);

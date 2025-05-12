@@ -201,5 +201,56 @@ The device settings module supports all required parameters:
 
 ---
 
+## Firmware Management System
+
+The system now includes a complete firmware management system for over-the-air (OTA) updates of connected devices:
+
+### Features
+
+- **Firmware Upload & Management**: Admin interface for uploading and managing firmware versions
+- **Device Model Targeting**: Firmware can be targeted to specific device models
+- **Version Control**: Automatic version comparison to serve appropriate updates
+- **OTA Update API**: RESTful API endpoints for devices to check for and download updates
+- **Secure Downloads**: Signed URLs with expiration for secure firmware distribution
+- **MD5 Verification**: MD5 hash provided for firmware integrity verification
+
+### Technical Implementation
+
+- **Admin Dashboard**: Available at `/dashboard/firmware` with upload and management UI
+- **Storage**: Firmware files stored in Supabase storage bucket with proper permissions
+- **Database**: Firmware metadata stored in relational database with version tracking
+- **API Endpoints**:
+  - `/api/hardware/firmware` (GET/POST) - For devices to check and download updates
+  - `/api/admin/firmware` (GET/POST/DELETE) - For administrators to manage firmware
+
+### Security Features
+
+- **Role-Based Access Control**: Only admin users can upload and manage firmware
+- **Authentication Required**: All firmware operations require proper authentication
+- **File Validation**: Binary files are validated before storage
+- **Version Comparison**: Devices only receive newer firmware versions
+
+### How to Test
+
+A comprehensive test script (`scripts/test-firmware.js`) is included to verify:
+- Firmware upload functionality
+- Firmware listing and retrieval
+- OTA update delivery to devices
+- Firmware binary download
+
+### How to Use
+
+1. **For Administrators**:
+   - Navigate to Dashboard → System Management → Firmware Management
+   - Upload new firmware files (.bin) with version number and device model
+   - View and manage existing firmware versions
+
+2. **For Devices**:
+   - Devices query `/api/hardware/firmware?version=current_version` with auth token
+   - If newer firmware is available, response includes download URL and MD5 hash
+   - No content (204) response if device firmware is current
+
+---
+
 
 

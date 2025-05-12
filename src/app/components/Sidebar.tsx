@@ -4,7 +4,7 @@ import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Settings, ChevronDown, LogOut } from "lucide-react"
+import { LayoutDashboard, Settings, ChevronDown, LogOut, Cog } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import Image from "next/image"
 import { useState } from "react"
@@ -40,6 +40,13 @@ const menuItems: MenuItem[] = [
       { title: "Device Lists", href: "/dashboard/device-lists" },
       { title: "Add or Edit Machine Images", href: "/dashboard/machine-images" },
       { title: "Vendo Settings", href: "/dashboard/device-settings" },
+    ],
+  },
+  {
+    title: "System Management",
+    icon: Cog,
+    subItems: [
+      { title: "Firmware Management", href: "/dashboard/firmware" },
     ],
   },
 ]

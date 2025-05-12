@@ -281,9 +281,21 @@ export const uploadAsset = async (formData: FormData): Promise<ApiResponse<Media
   }
 };
 
+// Firmware API interface
+export interface FirmwareInfo {
+  version: string;
+  bin_url: string;
+  md5_hash: string;
+  release_notes: string;
+}
+
 // Firmware API
-export const getFirmware = async (): Promise<ApiResponse<{ url: string }>> => {
-  return apiCall<{ url: string }>('firmware');
+export const getFirmware = async (currentVersion?: string): Promise<ApiResponse<FirmwareInfo>> => {
+  let endpoint = 'firmware';
+  if (currentVersion) {
+    endpoint += `?version=${encodeURIComponent(currentVersion)}`;
+  }
+  return apiCall<FirmwareInfo>(endpoint);
 };
 
 // Settings API

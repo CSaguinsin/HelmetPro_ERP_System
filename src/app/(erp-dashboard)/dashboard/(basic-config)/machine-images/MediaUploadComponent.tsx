@@ -59,14 +59,16 @@ export default function MediaUploadComponent({
   // Check authentication state
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
+      // Redirect immediately to login page when not authenticated
       router.push('/');
+      return;
     }
   }, [authLoading, isAuthenticated, router]);
 
   // Fetch device details
   useEffect(() => {
-    // Don't fetch if still authenticating
-    if (authLoading) return;
+    // Don't fetch if still authenticating or not authenticated
+    if (authLoading || !isAuthenticated) return;
     
     const fetchDeviceDetails = async () => {
       try {
@@ -74,7 +76,10 @@ export default function MediaUploadComponent({
         
         // Ensure user is available
         if (!user?.user_client_id) {
-          throw new Error("User not authenticated");
+          // Instead of throwing error, just redirect and return
+          console.log("User not found or missing client ID, redirecting to login");
+          router.push('/');
+          return;
         }
         
         const { data, error } = await supabase
@@ -101,14 +106,14 @@ export default function MediaUploadComponent({
         });
       } catch (err) {
         console.error("Error fetching device details:", err);
-        router.push('/dashboard/machine-images');
+        // Don't redirect on general errors to avoid loops
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchDeviceDetails();
-  }, [deviceId, authLoading, user, router]);
+  }, [deviceId, authLoading, isAuthenticated, user, router]);
 
   const handleUpload = async (file: File, type: "logo" | "video" | "image") => {
     const fileData: FileWithPreview = {
@@ -213,7 +218,18 @@ export default function MediaUploadComponent({
 
   const handleSaveAndContinue = async () => {
     try {
-      setIsSaving(true)
+      setIsSaving(true);
+      
+      // Check authentication first
+      if (!isAuthenticated || !user) {
+        toast({
+          title: "Authentication Error",
+          description: "You need to be logged in to save changes.",
+          variant: "destructive"
+        });
+        router.push('/');
+        return;
+      }
       
       // Get all uploaded media files
       const result = await getAssets();
@@ -272,8 +288,8 @@ export default function MediaUploadComponent({
   }
 
   useEffect(() => {
-    // Don't fetch assets if still authenticating
-    if (authLoading) return;
+    // Don't fetch assets if still authenticating or not authenticated
+    if (authLoading || !isAuthenticated) return;
     
     const fetchAssets = async () => {
       try {
@@ -282,6 +298,12 @@ export default function MediaUploadComponent({
         setVideoAd(null);
         setCompanyImages([]);
         
+        // Ensure user is available
+        if (!user?.user_client_id) {
+          console.log("User not found or missing client ID, cannot fetch assets");
+          return;
+        }
+        
         // Store the device ID in localStorage temporarily so API calls will include it
         if (deviceId) {
           localStorage.setItem('device_info', JSON.stringify({ device_id: deviceId }));
@@ -289,7 +311,10 @@ export default function MediaUploadComponent({
         
         // Call the getAssets function with the device ID
         const result = await getAssets();
-        if (result.error) throw new Error(result.error);
+        if (result.error) {
+          console.error("Error fetching assets:", result.error);
+          return;
+        }
         
         const mediaFiles = result.data || [];
         
@@ -340,7 +365,7 @@ export default function MediaUploadComponent({
     return () => {
       localStorage.removeItem('device_info');
     };
-  }, [deviceId, authLoading]);
+  }, [deviceId, authLoading, isAuthenticated, user]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
