@@ -79,7 +79,7 @@ Contributions are welcome! If you'd like to improve this project, please fork th
 ## License & Copyright
 This project is licensed under the [MIT License](LICENSE).
 
-**Copyright © Craftora.**
+
 
 # HelmetPro ERP - API & Frontend Integration Guide
 
