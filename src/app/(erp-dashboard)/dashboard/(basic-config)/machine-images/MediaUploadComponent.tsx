@@ -27,6 +27,9 @@ import { useRouter } from "next/navigation"
 import { toast } from "@/hooks/use-toast"
 import { useAuth } from "@/lib/auth-context"
 import { getAssets, uploadAsset, type MediaFile } from "@/lib/hardwareApi"
+import { Badge } from "@/components/ui/badge"
+import { supabase } from "@/lib/supabase"
+import { LoadingDots } from "../../../../components/loading-dots"
 
 type FileWithPreview = {
   id: string
@@ -36,14 +39,59 @@ type FileWithPreview = {
   status: "uploading" | "complete" | "error"
 }
 
-export default function MediaUploadComponent({ deviceId }: { deviceId: string }) {
+export default function MediaUploadComponent({ 
+  deviceId,
+  onBack
+}: { 
+  deviceId: string;
+  onBack?: () => void;
+}) {
   const [companyLogo, setCompanyLogo] = useState<FileWithPreview | null>(null)
   const [videoAd, setVideoAd] = useState<FileWithPreview | null>(null)
   const [companyImages, setCompanyImages] = useState<FileWithPreview[]>([])
   const [activeTab, setActiveTab] = useState("all")
   const router = useRouter()
   const [isSaving, setIsSaving] = useState(false)
-  const { } = useAuth()
+  const [deviceDetails, setDeviceDetails] = useState<{name: string; status: string} | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const { user, loading: authLoading, isAuthenticated } = useAuth()
+
+  // Check authentication state
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      router.push('/');
+    }
+  }, [authLoading, isAuthenticated, router]);
+
+  // Fetch device details
+  useEffect(() => {
+    // Don't fetch if still authenticating
+    if (authLoading) return;
+    
+    const fetchDeviceDetails = async () => {
+      try {
+        setIsLoading(true);
+        const { data, error } = await supabase
+          .from("device_list")
+          .select("device_name, device_status, device_reg_id")
+          .eq("device_id", deviceId)
+          .single();
+          
+        if (error) throw error;
+        
+        setDeviceDetails({
+          name: data.device_name || data.device_reg_id || `Device ID: ${deviceId}`,
+          status: data.device_status
+        });
+      } catch (err) {
+        console.error("Error fetching device details:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchDeviceDetails();
+  }, [deviceId, authLoading]);
 
   const handleUpload = async (file: File, type: "logo" | "video" | "image") => {
     const fileData: FileWithPreview = {
@@ -173,7 +221,10 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
       // Update device status to indicate media is configured
       const updateResult = await fetch('/api/device/update', {
         method: 'PUT',
-        headers: { 'access_token': localStorage.getItem('auth_token') || '' },
+        headers: { 
+          'access_token': localStorage.getItem('auth_token') || '',
+          'Content-Type': 'application/json' 
+        },
         body: JSON.stringify({ 
           deviceId,
           media_configured: true 
@@ -204,8 +255,17 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
   }
 
   useEffect(() => {
+    // Don't fetch assets if still authenticating
+    if (authLoading) return;
+    
     const fetchAssets = async () => {
       try {
+        // Store the device ID in localStorage temporarily so API calls will include it
+        if (deviceId) {
+          localStorage.setItem('device_info', JSON.stringify({ device_id: deviceId }));
+        }
+        
+        // Call the getAssets function with the device ID
         const result = await getAssets();
         if (result.error) throw new Error(result.error);
         
@@ -231,7 +291,12 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
     };
     
     fetchAssets();
-  }, []);
+    
+    // Clean up function to remove temporary device info from localStorage
+    return () => {
+      localStorage.removeItem('device_info');
+    };
+  }, [deviceId, authLoading]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-gradient-to-r from-blue-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
@@ -242,128 +307,294 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
-        <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Media Upload</h1>
-              <p className="text-gray-500 dark:text-gray-400 mt-1">Upload your company media assets</p>
-            </div>
-
-            <div className="flex items-center space-x-4">
-              {totalUploads > 0 && (
-                <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full px-3 py-1 shadow-sm">
-                  <span className="text-sm text-gray-600 dark:text-gray-300">
-                    {completedUploads}/{totalUploads} complete
-                  </span>
-                  <Progress value={uploadProgress} className="w-20 h-2" />
-                </div>
-              )}
-
-              {/* Mobile Sidebar Toggle */}
-              <Sheet>
-                <SheetTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                  >
-                    <Menu className="h-5 w-5" />
-                    <span className="sr-only">Toggle sidebar</span>
-                  </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-                  <Sidebar />
-                </SheetContent>
-              </Sheet>
-            </div>
+        {(isLoading || authLoading) ? (
+          <div className="flex items-center justify-center h-screen">
+            <LoadingDots />
           </div>
-
-          {/* Upload Progress Summary (Mobile) */}
-          {totalUploads > 0 && (
-            <div className="sm:hidden mb-4">
-              <Card>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium">Upload Progress</span>
-                    <span className="text-sm">
-                      {completedUploads}/{totalUploads}
-                    </span>
+        ) : (
+          <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
+            {/* Header */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  {onBack && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={onBack}
+                      className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                    >
+                      ← Back to devices
+                    </Button>
+                  )}
+                </div>
+                <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Media Upload</h1>
+                {deviceDetails && (
+                  <div className="flex items-center gap-2 mt-1 text-gray-600 dark:text-gray-300">
+                    <span>Device: <span className="font-medium">{deviceDetails.name}</span></span>
+                    <Badge 
+                      variant={deviceDetails.status === 'Enable' || deviceDetails.status === 'active' ? 'success' : 'default'}
+                    >
+                      {deviceDetails.status === 'Enable' || deviceDetails.status === 'active' ? 'Active' : 'Inactive'}
+                    </Badge>
                   </div>
-                  <Progress value={uploadProgress} className="h-2" />
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                )}
+              </div>
 
-          {/* Media Upload Tabs */}
-          <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
-            <TabsList className="grid grid-cols-4 mb-4">
-              <TabsTrigger value="all" className="relative">
-                All
+              <div className="flex items-center space-x-4">
                 {totalUploads > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {totalUploads}
-                  </span>
+                  <div className="hidden sm:flex items-center gap-2 bg-white dark:bg-gray-800 rounded-full px-3 py-1 shadow-sm">
+                    <span className="text-sm text-gray-600 dark:text-gray-300">
+                      {completedUploads}/{totalUploads} complete
+                    </span>
+                    <Progress value={uploadProgress} className="w-20 h-2" />
+                  </div>
                 )}
-              </TabsTrigger>
-              <TabsTrigger value="logo" className="relative">
-                Logo
-                {companyLogo && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    1
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="video" className="relative">
-                Video
-                {videoAd && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    1
-                  </span>
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="images" className="relative">
-                Images
-                {companyImages.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {companyImages.length}
-                  </span>
-                )}
-              </TabsTrigger>
-            </TabsList>
 
-            <TabsContent value="all">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {/* Logo Card */}
-                <MediaUploadCard
-                  title="Company Logo"
-                  description="Upload your company logo (PNG or JPG)"
-                  icon={<ImageIcon className="h-5 w-5" />}
-                  fileType="image/*"
-                  onUpload={handleLogoUpload}
-                  fileData={companyLogo}
-                  onRemove={removeLogo}
-                  inputId="company-logo-all"
-                  maxSize="5MB"
-                />
+                {/* Mobile Sidebar Toggle */}
+                <Sheet>
+                  <SheetTrigger asChild>
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                    >
+                      <Menu className="h-5 w-5" />
+                      <span className="sr-only">Toggle sidebar</span>
+                    </Button>
+                  </SheetTrigger>
+                  <SheetContent side="left" className="w-[300px] sm:w-[400px]">
+                    <Sidebar />
+                  </SheetContent>
+                </Sheet>
+              </div>
+            </div>
 
-                {/* Video Card */}
-                <MediaUploadCard
-                  title="Video Ad"
-                  description="Upload your promotional video (MP4)"
-                  icon={<Video className="h-5 w-5" />}
-                  fileType="video/*"
-                  onUpload={handleVideoUpload}
-                  fileData={videoAd}
-                  onRemove={removeVideo}
-                  inputId="video-ad-all"
-                  maxSize="50MB"
-                />
+            {/* Upload Progress Summary (Mobile) */}
+            {totalUploads > 0 && (
+              <div className="sm:hidden mb-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-medium">Upload Progress</span>
+                      <span className="text-sm">
+                        {completedUploads}/{totalUploads}
+                      </span>
+                    </div>
+                    <Progress value={uploadProgress} className="h-2" />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
 
-                {/* Images Card */}
+            {/* Media Upload Tabs */}
+            <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="mb-6">
+              <TabsList className="grid grid-cols-4 mb-4">
+                <TabsTrigger value="all" className="relative">
+                  All
+                  {totalUploads > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {totalUploads}
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="logo" className="relative">
+                  Logo
+                  {companyLogo && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      1
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="video" className="relative">
+                  Video
+                  {videoAd && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      1
+                    </span>
+                  )}
+                </TabsTrigger>
+                <TabsTrigger value="images" className="relative">
+                  Images
+                  {companyImages.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                      {companyImages.length}
+                    </span>
+                  )}
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="all">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {/* Logo Card */}
+                  <MediaUploadCard
+                    title="Company Logo"
+                    description="Upload your company logo (PNG or JPG)"
+                    icon={<ImageIcon className="h-5 w-5" />}
+                    fileType="image/*"
+                    onUpload={handleLogoUpload}
+                    fileData={companyLogo}
+                    onRemove={removeLogo}
+                    inputId="company-logo-all"
+                    maxSize="5MB"
+                  />
+
+                  {/* Video Card */}
+                  <MediaUploadCard
+                    title="Video Ad"
+                    description="Upload your promotional video (MP4)"
+                    icon={<Video className="h-5 w-5" />}
+                    fileType="video/*"
+                    onUpload={handleVideoUpload}
+                    fileData={videoAd}
+                    onRemove={removeVideo}
+                    inputId="video-ad-all"
+                    maxSize="50MB"
+                  />
+
+                  {/* Images Card */}
+                  <Card className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
+                    <CardHeader className="pb-2">
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center gap-2">
+                          <div className="bg-primary/10 p-2 rounded-full">
+                            <ImagePlus className="h-5 w-5 text-primary" />
+                          </div>
+                          <CardTitle className="text-lg font-semibold">Company Images</CardTitle>
+                        </div>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-4 w-4 text-gray-400" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Upload up to 3 company images</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                      <CardDescription>Upload up to 3 showcase images (PNG or JPG)</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-3 gap-2">
+                        {companyImages.map((image, index) => (
+                          <div
+                            key={index}
+                            className="relative aspect-square rounded-md overflow-hidden border border-gray-200 dark:border-gray-700"
+                          >
+                            <Image
+                              src={image.preview || "/placeholder.svg"}
+                              alt={`Company Image ${index + 1}`}
+                              className="object-cover"
+                              fill
+                              sizes="(max-width: 768px) 100vw, 33vw"
+                            />
+                            {image.status === "uploading" && (
+                              <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+                                <Progress value={image.progress} className="w-3/4 h-1.5" />
+                              </div>
+                            )}
+                            {image.status === "complete" && (
+                              <div className="absolute top-1 right-1">
+                                <CheckCircle2 className="h-4 w-4 text-green-500 bg-white rounded-full" />
+                              </div>
+                            )}
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="absolute top-1 left-1 h-6 w-6 bg-black/30 hover:bg-black/50 text-white rounded-full"
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Remove image?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to remove this image? This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => removeImage(index)}>Remove</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
+                        ))}
+
+                        {Array.from({ length: 3 - companyImages.length }).map((_, index) => (
+                          <div
+                            key={`empty-${index}`}
+                            className="relative aspect-square rounded-md overflow-hidden border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center bg-gray-50 dark:bg-gray-800"
+                          >
+                            {index === 0 && (
+                              <>
+                                <Input
+                                  type="file"
+                                  accept="image/*"
+                                  onChange={handleImageUpload}
+                                  className="hidden"
+                                  id="company-images-all"
+                                  multiple
+                                />
+                                <Label
+                                  htmlFor="company-images-all"
+                                  className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                                >
+                                  <ImagePlus className="h-5 w-5 text-gray-400 dark:text-gray-500 mb-1" />
+                                  <span className="text-xs text-gray-500 dark:text-gray-400">Add</span>
+                                </Label>
+                              </>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                    <CardFooter className="pt-0 text-xs text-gray-500">Max 5MB per image</CardFooter>
+                  </Card>
+                </div>
+              </TabsContent>
+
+              <TabsContent value="logo">
+                <div className="max-w-md mx-auto">
+                  <MediaUploadCard
+                    title="Company Logo"
+                    description="Upload your company logo (PNG or JPG)"
+                    icon={<ImageIcon className="h-5 w-5" />}
+                    fileType="image/*"
+                    onUpload={handleLogoUpload}
+                    fileData={companyLogo}
+                    onRemove={removeLogo}
+                    inputId="company-logo-tab"
+                    maxSize="5MB"
+                    expanded
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="video">
+                <div className="max-w-md mx-auto">
+                  <MediaUploadCard
+                    title="Video Ad"
+                    description="Upload your promotional video (MP4)"
+                    icon={<Video className="h-5 w-5" />}
+                    fileType="video/*"
+                    onUpload={handleVideoUpload}
+                    fileData={videoAd}
+                    onRemove={removeVideo}
+                    inputId="video-ad-tab"
+                    maxSize="50MB"
+                    expanded
+                  />
+                </div>
+              </TabsContent>
+
+              <TabsContent value="images">
                 <Card className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-                  <CardHeader className="pb-2">
+                  <CardHeader>
                     <div className="flex justify-between items-center">
                       <div className="flex items-center gap-2">
                         <div className="bg-primary/10 p-2 rounded-full">
@@ -371,25 +602,15 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
                         </div>
                         <CardTitle className="text-lg font-semibold">Company Images</CardTitle>
                       </div>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="h-4 w-4 text-gray-400" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>Upload up to 3 company images</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
                     </div>
-                    <CardDescription>Upload up to 3 showcase images (PNG or JPG)</CardDescription>
+                    <CardDescription>Upload up to 3 showcase images for your company</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                       {companyImages.map((image, index) => (
                         <div
                           key={index}
-                          className="relative aspect-square rounded-md overflow-hidden border border-gray-200 dark:border-gray-700"
+                          className="relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700 aspect-video sm:aspect-square"
                         >
                           <Image
                             src={image.preview || "/placeholder.svg"}
@@ -400,223 +621,94 @@ export default function MediaUploadComponent({ deviceId }: { deviceId: string })
                           />
                           {image.status === "uploading" && (
                             <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                              <Progress value={image.progress} className="w-3/4 h-1.5" />
+                              <div className="w-3/4 space-y-2">
+                                <Progress value={image.progress} className="h-1.5" />
+                                <p className="text-white text-xs text-center">{image.progress}%</p>
+                              </div>
                             </div>
                           )}
                           {image.status === "complete" && (
-                            <div className="absolute top-1 right-1">
-                              <CheckCircle2 className="h-4 w-4 text-green-500 bg-white rounded-full" />
+                            <div className="absolute top-2 right-2">
+                              <CheckCircle2 className="h-5 w-5 text-green-500 bg-white rounded-full" />
                             </div>
                           )}
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute top-1 left-1 h-6 w-6 bg-black/30 hover:bg-black/50 text-white rounded-full"
-                              >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remove image?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to remove this image? This action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => removeImage(index)}>Remove</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => removeImage(index)}
+                            className="absolute bottom-2 right-2"
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Remove
+                          </Button>
                         </div>
                       ))}
 
-                      {Array.from({ length: 3 - companyImages.length }).map((_, index) => (
-                        <div
-                          key={`empty-${index}`}
-                          className="relative aspect-square rounded-md overflow-hidden border border-dashed border-gray-300 dark:border-gray-600 flex items-center justify-center bg-gray-50 dark:bg-gray-800"
-                        >
-                          {index === 0 && (
-                            <>
-                              <Input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleImageUpload}
-                                className="hidden"
-                                id="company-images-all"
-                                multiple
-                              />
-                              <Label
-                                htmlFor="company-images-all"
-                                className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-                              >
-                                <ImagePlus className="h-5 w-5 text-gray-400 dark:text-gray-500 mb-1" />
-                                <span className="text-xs text-gray-500 dark:text-gray-400">Add</span>
-                              </Label>
-                            </>
-                          )}
+                      {companyImages.length < 3 && (
+                        <div className="relative rounded-md overflow-hidden border border-dashed border-gray-300 dark:border-gray-600 aspect-video sm:aspect-square flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
+                          <Input
+                            type="file"
+                            accept="image/*"
+                            onChange={handleImageUpload}
+                            className="hidden"
+                            id="company-images-tab"
+                            multiple
+                          />
+                          <Label
+                            htmlFor="company-images-tab"
+                            className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors p-4"
+                          >
+                            <ImagePlus className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-2" />
+                            <span className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
+                              Click to upload image
+                            </span>
+                            <span className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
+                              PNG, JPG up to 5MB
+                            </span>
+                          </Label>
                         </div>
-                      ))}
+                      )}
                     </div>
                   </CardContent>
-                  <CardFooter className="pt-0 text-xs text-gray-500">Max 5MB per image</CardFooter>
+                  <CardFooter className="flex justify-between">
+                    <p className="text-sm text-gray-500">{companyImages.length}/3 images uploaded</p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      disabled={companyImages.length === 0}
+                      onClick={() => setCompanyImages([])}
+                    >
+                      Clear all
+                    </Button>
+                  </CardFooter>
                 </Card>
-              </div>
-            </TabsContent>
+              </TabsContent>
+            </Tabs>
 
-            <TabsContent value="logo">
-              <div className="max-w-md mx-auto">
-                <MediaUploadCard
-                  title="Company Logo"
-                  description="Upload your company logo (PNG or JPG)"
-                  icon={<ImageIcon className="h-5 w-5" />}
-                  fileType="image/*"
-                  onUpload={handleLogoUpload}
-                  fileData={companyLogo}
-                  onRemove={removeLogo}
-                  inputId="company-logo-tab"
-                  maxSize="5MB"
-                  expanded
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="video">
-              <div className="max-w-md mx-auto">
-                <MediaUploadCard
-                  title="Video Ad"
-                  description="Upload your promotional video (MP4)"
-                  icon={<Video className="h-5 w-5" />}
-                  fileType="video/*"
-                  onUpload={handleVideoUpload}
-                  fileData={videoAd}
-                  onRemove={removeVideo}
-                  inputId="video-ad-tab"
-                  maxSize="50MB"
-                  expanded
-                />
-              </div>
-            </TabsContent>
-
-            <TabsContent value="images">
-              <Card className="bg-white dark:bg-gray-800 shadow-md hover:shadow-lg transition-shadow duration-300 overflow-hidden">
-                <CardHeader>
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 p-2 rounded-full">
-                        <ImagePlus className="h-5 w-5 text-primary" />
-                      </div>
-                      <CardTitle className="text-lg font-semibold">Company Images</CardTitle>
-                    </div>
-                  </div>
-                  <CardDescription>Upload up to 3 showcase images for your company</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    {companyImages.map((image, index) => (
-                      <div
-                        key={index}
-                        className="relative rounded-md overflow-hidden border border-gray-200 dark:border-gray-700 aspect-video sm:aspect-square"
-                      >
-                        <Image
-                          src={image.preview || "/placeholder.svg"}
-                          alt={`Company Image ${index + 1}`}
-                          className="object-cover"
-                          fill
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                        />
-                        {image.status === "uploading" && (
-                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                            <div className="w-3/4 space-y-2">
-                              <Progress value={image.progress} className="h-1.5" />
-                              <p className="text-white text-xs text-center">{image.progress}%</p>
-                            </div>
-                          </div>
-                        )}
-                        {image.status === "complete" && (
-                          <div className="absolute top-2 right-2">
-                            <CheckCircle2 className="h-5 w-5 text-green-500 bg-white rounded-full" />
-                          </div>
-                        )}
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => removeImage(index)}
-                          className="absolute bottom-2 right-2"
-                        >
-                          <X className="h-4 w-4 mr-1" />
-                          Remove
-                        </Button>
-                      </div>
-                    ))}
-
-                    {companyImages.length < 3 && (
-                      <div className="relative rounded-md overflow-hidden border border-dashed border-gray-300 dark:border-gray-600 aspect-video sm:aspect-square flex flex-col items-center justify-center bg-gray-50 dark:bg-gray-800">
-                        <Input
-                          type="file"
-                          accept="image/*"
-                          onChange={handleImageUpload}
-                          className="hidden"
-                          id="company-images-tab"
-                          multiple
-                        />
-                        <Label
-                          htmlFor="company-images-tab"
-                          className="flex flex-col items-center justify-center w-full h-full cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors p-4"
-                        >
-                          <ImagePlus className="h-8 w-8 text-gray-400 dark:text-gray-500 mb-2" />
-                          <span className="text-sm font-medium text-gray-700 dark:text-gray-300 text-center">
-                            Click to upload image
-                          </span>
-                          <span className="text-xs text-gray-500 dark:text-gray-400 text-center mt-1">
-                            PNG, JPG up to 5MB
-                          </span>
-                        </Label>
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter className="flex justify-between">
-                  <p className="text-sm text-gray-500">{companyImages.length}/3 images uploaded</p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    disabled={companyImages.length === 0}
-                    onClick={() => setCompanyImages([])}
-                  >
-                    Clear all
-                  </Button>
-                </CardFooter>
-              </Card>
-            </TabsContent>
-          </Tabs>
-
-          {/* Action Buttons */}
-          <div className="flex justify-end gap-4 mt-8">
-            <Button 
-              variant="outline" 
-              onClick={() => router.push('/dashboard')}
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleSaveAndContinue}
-              disabled={totalUploads === 0 || completedUploads !== totalUploads || isSaving}
-            >
-              {isSaving ? (
-                <>
-                  <span className="animate-spin mr-2">⏳</span>
-                  Saving...
-                </>
-              ) : (
-                'Save & Continue'
-              )}
-            </Button>
+            {/* Action Buttons */}
+            <div className="flex justify-end gap-4 mt-8">
+              <Button 
+                variant="outline" 
+                onClick={onBack || (() => router.push('/dashboard'))}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveAndContinue}
+                disabled={totalUploads === 0 || completedUploads !== totalUploads || isSaving}
+              >
+                {isSaving ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Saving...
+                  </>
+                ) : (
+                  'Save & Continue'
+                )}
+              </Button>
+            </div>
           </div>
-        </div>
+        )}
       </main>
     </div>
   )

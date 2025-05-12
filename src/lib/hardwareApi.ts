@@ -154,7 +154,38 @@ export const getDeviceDetails = async (deviceId?: string | number): Promise<ApiR
 
 // Assets API
 export const getAssets = async (): Promise<ApiResponse<MediaFile[]>> => {
-  return apiCall<MediaFile[]>('assets');
+  try {
+    const deviceInfoStr = localStorage.getItem('device_info');
+    const endpoint = deviceInfoStr 
+      ? `assets?deviceId=${JSON.parse(deviceInfoStr).device_id}`
+      : 'assets';
+      
+    const result = await apiCall<any>(endpoint);
+    
+    // Handle both old and new response formats
+    if (result.data) {
+      // New format - direct data array
+      return { data: result.data };
+    } else if (result.assets) {
+      // Old format - assets array
+      const mappedAssets = result.assets.map((asset: any) => ({
+        id: asset.id,
+        file_type: asset.type,
+        file_name: asset.name,
+        file_url: asset.url
+      }));
+      return { data: mappedAssets };
+    } else if (result.error) {
+      // Error response
+      return { error: result.error };
+    }
+    
+    // Fallback - empty array
+    return { data: [] };
+  } catch (error) {
+    console.error('Error fetching assets:', error);
+    return { error: error instanceof Error ? error.message : 'Failed to fetch assets' };
+  }
 };
 
 export const uploadAsset = async (formData: FormData): Promise<ApiResponse<MediaFile>> => {

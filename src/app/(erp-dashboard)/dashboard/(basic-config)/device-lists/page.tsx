@@ -15,9 +15,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import AddDeviceInfo from "./add-device-info";
 import { useAuth } from "@/lib/auth-context";
 import { useRouter } from "next/navigation";
-import SendTransaction from "@/app/components/SendTransaction";
-import SendStatus from "@/app/components/SendStatus";
-import SendFeedback from "@/app/components/SendFeedback";
 import { supabase } from "@/lib/supabase";
 
 export default function DeviceLists() {
@@ -230,23 +227,6 @@ export default function DeviceLists() {
               ) : (
                 <div>
                   <DeviceDataTable columns={columns} data={data} />
-                  <div className="mt-8 space-y-8">
-                    {data.map(device => (
-                      <Card key={device.device_id} className="p-4 bg-gray-50 dark:bg-gray-900">
-                        <div className="font-semibold mb-2 flex items-center justify-between">
-                          <span>Device: {device.device_name || device.device_id}</span>
-                          <Button size="sm" onClick={() => router.push(`/dashboard/device-settings/${device.device_id}`)}>
-                            Settings
-                          </Button>
-                        </div>
-                        <div className="flex flex-wrap gap-4">
-                          <SendTransaction machineId={device.device_id.toString()} />
-                          <SendStatus />
-                          <SendFeedback machineId={device.device_id.toString()} />
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
                 </div>
               )}
             </CardContent>

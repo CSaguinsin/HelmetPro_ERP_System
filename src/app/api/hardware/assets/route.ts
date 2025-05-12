@@ -83,7 +83,54 @@ export async function GET(req: NextRequest): Promise<Response> {
   }
 
   try {
-    // If we have a device, use that for asset lookup
+    // Try to get device ID from headers or query parameter
+    const deviceInfoHeader = req.headers.get('x-device-info');
+    let deviceId = null;
+    
+    // Parse device info from header if available
+    if (deviceInfoHeader) {
+      try {
+        const deviceInfo = JSON.parse(deviceInfoHeader);
+        deviceId = deviceInfo.device_id;
+      } catch (e) {
+        console.warn("Failed to parse device info header", e);
+      }
+    }
+    
+    // Use query parameter as fallback
+    if (!deviceId) {
+      deviceId = req.nextUrl.searchParams.get("deviceId");
+    }
+    
+    // If we have a specific device ID from headers or query params, use it
+    if (deviceId) {
+      console.log(`Using device ID from request: ${deviceId}`);
+      
+      // Get media files for this device from our media_files table
+      const { data: mediaFiles, error: mediaError } = await supabase
+        .from("media_files")
+        .select("media_id, file_url, file_type, created_at, display_order, thumbnail_urls")
+        .eq("device_id", deviceId);
+      
+      if (mediaError) {
+        console.error("Error fetching media files:", mediaError);
+        return NextResponse.json({ error: "Failed to fetch media files" }, { status: 500 });
+      }
+      
+      // Map to the expected format
+      const formattedFiles = (mediaFiles || []).map(file => ({
+        id: file.media_id,
+        file_type: file.file_type,
+        file_name: file.file_url.split('/').pop() || 'unknown',
+        file_url: file.file_url.startsWith('http') 
+          ? file.file_url 
+          : supabase.storage.from("vending-media").getPublicUrl(file.file_url).data.publicUrl
+      }));
+      
+      return NextResponse.json({ data: formattedFiles }, { status: 200 });
+    }
+    
+    // If we have a device from the auth verification, use that
     if (device) {
       // Check if it's a simulated device in development mode
       if (device.id === "admin-device-001") {
@@ -259,167 +306,100 @@ export async function GET(req: NextRequest): Promise<Response> {
  *         description: Server error
  */
 export async function POST(req: NextRequest): Promise<Response> {
-  // Check if this is a file upload request
+  // If it's a file upload, handle it
   const contentType = req.headers.get("content-type") || "";
-  
   if (contentType.includes("multipart/form-data")) {
     return handleFileUpload(req);
   }
   
-  // Not a file upload, reuse GET implementation for POST method
+  // Otherwise, handle it like a GET request
   return GET(req);
 }
 
 async function handleFileUpload(req: NextRequest): Promise<Response> {
-  // Check for test mode
-  const isTestMode = req.nextUrl.searchParams.get("test_mode") === "true";
-  
-  if (isTestMode) {
-    console.log("Running assets upload endpoint in test mode");
-    return NextResponse.json({ 
-      file: {
-        id: "upload-1",
-        name: "Test Upload",
-        url: "https://example.com/assets/test-upload.jpg"
-      }
-    }, { status: 200 });
-  }
-  
-  // Verify auth token
-  const { authenticated, response, device, user } = await verifyHardwareAuth(req);
-  
-  if (!authenticated) {
-    // Ensure response is never null by providing a default
-    return response || NextResponse.json({ error: "Authentication failed" }, { status: 401 });
-  }
-  
   try {
-    // Parse the multipart form data
     const formData = await req.formData();
     const file = formData.get("file") as File;
-    const name = formData.get("name") as string;
     const type = formData.get("type") as string;
+    const deviceId = formData.get("deviceId") as string;
     
-    if (!file || !name || !type) {
-      return NextResponse.json({ error: "Missing required fields: file, name, and type" }, { status: 400 });
+    if (!file || !type || !deviceId) {
+      return NextResponse.json({ 
+        error: "Missing required fields (file, type, deviceId)" 
+      }, { status: 400 });
     }
     
     // Validate file type
-    const validTypes = ["banner", "icon", "video", "image"];
-    if (!validTypes.includes(type)) {
-      return NextResponse.json({ error: "Invalid asset type. Must be one of: banner, icon, video, image" }, { status: 400 });
+    if (!["logo", "video", "image"].includes(type)) {
+      return NextResponse.json({ 
+        error: "Invalid file type. Must be one of: logo, video, image" 
+      }, { status: 400 });
     }
     
-    // Determine which device to associate the asset with
-    let deviceId: string;
+    // Generate a unique filename with the correct path structure
+    // Path in storage: media/[deviceId]/filename
+    const storagePath = `media/${deviceId}/${file.name}`;
     
-    if (device) {
-      // Check if it's a simulated device in development mode
-      if (device.id === "admin-device-001") {
-        console.log("Using simulated response for file upload with admin device");
-        return NextResponse.json({
-          file: {
-            id: "admin-upload-" + Date.now(),
-            name: name,
-            url: `https://example.com/simulated-assets/${name}`
-          }
-        }, { status: 200 });
+    // Database path should match the hierarchy
+    const filePath = storagePath;
+    
+    // Use the existing bucket - don't try to create it
+    const bucketName = "vending-media";
+    
+    // Upload file to Supabase Storage
+    try {
+      const { data: uploadData, error: uploadError } = await supabase.storage
+        .from(bucketName)
+        .upload(storagePath, file, {
+          cacheControl: "3600",
+          upsert: true, // Use upsert to handle overwrites gracefully
+        });
+      
+      if (uploadError) {
+        console.error("Storage upload error:", uploadError);
+        return NextResponse.json({ error: "Failed to upload file - " + uploadError.message }, { status: 500 });
       }
       
-      deviceId = device.id;
-    } else if (user && user.device_id) {
-      deviceId = user.device_id;
-    } else {
-      return NextResponse.json({ 
-        error: "No device associated with this user. Please associate a device with your account." 
-      }, { status: 404 });
-    }
-    
-    // Create file buffer from file
-    const fileBuffer = await file.arrayBuffer();
-    const fileData = new Uint8Array(fileBuffer);
-    
-    // Generate unique file path
-    const fileName = `${Date.now()}-${file.name.replace(/\s/g, '_')}`;
-    const filePath = `device_${deviceId}/${fileName}`;
-    
-    // Upload to Supabase storage
-    const { /* data: uploadData, */ error: uploadError } = await supabase.storage
-      .from("assets")
-      .upload(filePath, fileData, {
-        contentType: file.type,
-        upsert: false
-      });
-    
-    if (uploadError) {
-      console.error("Error uploading file:", uploadError);
-      return NextResponse.json({ error: "Failed to upload file" }, { status: 500 });
-    }
-    
-    // Get the default asset group for the device
-    const { data: assetGroup, error: groupError } = await supabase
-      .from("asset_groups")
-      .select("id")
-      .eq("device_id", deviceId)
-      .eq("is_default", true)
-      .single();
-    
-    let groupId: string;
-    
-    if (groupError || !assetGroup) {
-      // Create a default group if none exists
-      const { data: newGroup, error: newGroupError } = await supabase
-        .from("asset_groups")
+      // Get the public URL for the file
+      const { data: publicUrl } = supabase.storage
+        .from(bucketName)
+        .getPublicUrl(storagePath);
+      
+      // Save the reference in database
+      const { data: mediaRecord, error: dbError } = await supabase
+        .from("media_files")
         .insert({
-          name: `Device ${deviceId} Default Group`,
           device_id: deviceId,
-          is_default: true
+          file_type: type,
+          file_url: filePath,
+          created_at: new Date().toISOString(),
+          optimization_status: null,
+          thumbnail_urls: null,
+          display_order: null
         })
         .select()
         .single();
-        
-      if (newGroupError || !newGroup) {
-        console.error("Error creating asset group:", newGroupError);
-        return NextResponse.json({ error: "Failed to create asset group" }, { status: 500 });
+      
+      if (dbError) {
+        console.error("Database insert error:", dbError);
+        return NextResponse.json({ error: "Failed to save file reference" }, { status: 500 });
       }
       
-      groupId = newGroup.id;
-    } else {
-      groupId = assetGroup.id;
+      return NextResponse.json({ 
+        success: true, 
+        data: {
+          id: mediaRecord.media_id,
+          file_type: mediaRecord.file_type,
+          file_name: file.name,
+          file_url: mediaRecord.file_url
+        }
+      }, { status: 200 });
+    } catch (uploadError) {
+      console.error("File upload caught error:", uploadError);
+      return NextResponse.json({ error: "Upload failed - " + (uploadError as Error).message }, { status: 500 });
     }
-    
-    // Save asset metadata to database
-    const { data: asset, error: assetError } = await supabase
-      .from("assets")
-      .insert({
-        name,
-        type,
-        file_path: filePath,
-        group_id: groupId
-      })
-      .select()
-      .single();
-      
-    if (assetError || !asset) {
-      console.error("Error saving asset metadata:", assetError);
-      return NextResponse.json({ error: "Failed to save asset metadata" }, { status: 500 });
-    }
-    
-    // Generate signed URL for the uploaded file
-    const { data: urlData } = await supabase.storage
-      .from("assets")
-      .createSignedUrl(filePath, 60 * 60 * 24); // 24 hour expiry
-    
-    return NextResponse.json({
-      file: {
-        id: asset.id,
-        name: asset.name,
-        url: urlData?.signedUrl || ""
-      }
-    }, { status: 200 });
-    
-  } catch (err) {
-    console.error("Error processing file upload:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+  } catch (error) {
+    console.error("File upload error:", error);
+    return NextResponse.json({ error: "File upload failed" }, { status: 500 });
   }
 } 

@@ -37,18 +37,10 @@ const menuItems: MenuItem[] = [
     title: "Basic Configuration",
     icon: Settings,
     subItems: [
-      { title: "Set Site Info", href: "/dashboard/set-site-info" },
       { title: "Device Lists", href: "/dashboard/device-lists" },
-      { title: "Commodity Category Setting", href: "/dashboard/commodity-category-settings" },
-      { title: "Set Material Info", href: "/dashboard/set-material-info" },
       { title: "Add or Edit Machine Images", href: "/dashboard/machine-images" },
       { title: "Vendo Settings", href: "/dashboard/device-settings" },
     ],
-  },
-  {
-    title: "System Management",
-    icon: Layers,
-    subItems: [{ title: "Set User Rights", href: "/system/logs" }],
   },
 ]
 
