@@ -48,6 +48,7 @@ const menuItems: MenuItem[] = [
     subItems: [
       { title: "Firmware Management", href: "/dashboard/firmware" },
       { title: "Sales Monitoring", href: "/dashboard/sales-monitoring" },
+      { title: "Machine Status & Notifications", href: "/dashboard/machine-status" },
     ],
   },
 ]

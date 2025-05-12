@@ -106,6 +106,55 @@ Retrieves or uploads media assets for the device.
   }
   ```
 
+### Status (`/api/hardware/status`)
+
+Reports device status updates and retrieves status history.
+
+- **Methods:** POST, GET
+- **Headers:** Authorization or access_token (see Authentication)
+- **Query Parameters:**
+  - `test_mode` - When set to true, returns sample data or accepts test requests without authentication (development only)
+
+#### POST - Send Status Update
+
+- **Body:**
+  ```json
+  {
+    "code": 100,           // Status code (required)
+    "description": "string" // Status description (required)
+  }
+  ```
+- **Response:**
+  ```json
+  {
+    "message": "Status updated successfully",
+    "success": true
+  }
+  ```
+
+#### GET - Retrieve Status History
+
+- **Response:**
+  ```json
+  {
+    "current_status": {
+      "code": 100,
+      "description": "string",
+      "last_updated": "string"
+    },
+    "status_history": [
+      {
+        "id": "string",
+        "device_id": "string",
+        "machine_id": "string",
+        "status_code": 100,
+        "status_description": "string",
+        "timestamp": "string"
+      }
+    ]
+  }
+  ```
+
 ## Testing
 
 You can test these endpoints using curl:
@@ -142,6 +191,21 @@ curl -X POST http://localhost:3000/api/hardware/assets \
 # Test mode (development only)
 curl -X GET http://localhost:3000/api/hardware/device-details?test_mode=true
 curl -X GET http://localhost:3000/api/hardware/assets?test_mode=true
+
+# Send status update
+curl -X POST http://localhost:3000/api/hardware/status \
+  -H "access_token: YOUR_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"code": 100, "description": "Machine idle"}'
+
+# Get status history
+curl -X GET http://localhost:3000/api/hardware/status \
+  -H "access_token: YOUR_TOKEN"
+
+# Test mode (development only)
+curl -X POST http://localhost:3000/api/hardware/status \
+  -H "Content-Type: application/json" \
+  -d '{"code": 100, "description": "Machine idle", "test_mode": true}'
 ```
 
 ## Debugging

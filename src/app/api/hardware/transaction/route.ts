@@ -125,7 +125,7 @@ export async function POST(req: NextRequest): Promise<Response> {
     
     // Parse request body first to check for test_mode
     const body = await req.json();
-    const { machineId, amount, payment_method, test_mode } = body;
+    const { machineId, amount, payment_method, test_mode, device_id } = body;
     
     // Handle test mode for development
     if (test_mode === true) {
@@ -137,6 +137,77 @@ export async function POST(req: NextRequest): Promise<Response> {
       }, { status: 201 });
     }
     
+    // Check for direct device_id in body for simplified machine-to-machine communication
+    if (device_id) {
+      console.log(`Using direct device ID: ${device_id} from request body`);
+      // Validate required fields
+      if (!machineId || amount === undefined) {
+        return NextResponse.json({ 
+          error: "Machine ID and amount are required" 
+        }, { status: 400 });
+      }
+
+      try {
+        // Verify device exists
+        const { data: deviceData, error: deviceError } = await supabase
+          .from("device_list")
+          .select("*")
+          .eq("device_id", device_id)
+          .single();
+
+        if (deviceError || !deviceData) {
+          console.error("Device not found:", deviceError);
+          return NextResponse.json({ error: "Device not found" }, { status: 401 });
+        }
+
+        // Record transaction in database
+        const { data, error } = await supabase
+          .from("transactions")
+          .insert({
+            device_id,
+            machine_id: machineId,
+            amount,
+            payment_method: payment_method || "coin_slot", // Default to coin slot if not specified
+            transaction_date: new Date().toISOString(),
+            status: "completed"
+          })
+          .select()
+          .single();
+
+        if (error) {
+          console.error("Database error:", error);
+          return NextResponse.json({ error: "Failed to record transaction" }, { status: 500 });
+        }
+
+        // Update device last transaction time if possible (optional)
+        try {
+          // Try to find the device in device_list and update it
+          const { error: updateError } = await supabase
+            .from("device_list")
+            .update({ last_updated: new Date().toISOString() })
+            .eq("device_id", device_id);
+          
+          if (updateError) {
+            console.warn("Could not update device last transaction time:", updateError);
+            // Continue anyway as this is not critical
+          }
+        } catch (updateErr) {
+          console.warn("Error updating device timestamp:", updateErr);
+          // Continue anyway as this is not critical
+        }
+
+        return NextResponse.json({ 
+          message: "Transaction recorded successfully", 
+          transaction_id: data.id,
+          success: true
+        }, { status: 201 });
+      } catch (dbError) {
+        console.error("Database operation error:", dbError);
+        return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
+      }
+    }
+    
+    // Regular auth flow using token
     // For non-test mode, verify auth token
     const { authenticated, response, device } = await verifyHardwareAuth(req);
     

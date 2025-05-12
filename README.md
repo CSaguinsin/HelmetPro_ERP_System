@@ -262,44 +262,73 @@ The system now includes a comprehensive Sales Monitoring Module that allows trac
 - **Real-Time Updates**: Send transactions and receive immediate confirmation
 - **Secure API**: All transaction operations require proper authentication
 - **User-Friendly Interface**: Clean UI for monitoring and initiating transactions
+- **Total Sales Tracking**: View total sales amount per device
+- **Payment Method Tracking**: Track different payment methods used
 
 ### Technical Implementation
 
 - **Dashboard Page**: Available at `/dashboard/sales-monitoring` with full sidebar integration
-- **API Endpoints**:
-  - `POST /api/hardware/transaction` - For sending new transactions
-  - `GET /api/hardware/transaction` - For retrieving transaction history
-- **Database**: Transactions stored in relational database with proper indexing
-- **Authentication**: All transaction operations require valid access tokens
-
-### Transaction API Specification
-
-- **Send Transaction API**:
-  - **Method**: POST
-  - **Endpoint**: `/api/hardware/transaction`
-  - **Authentication**: `access_token` header required
-  - **Request Body**: `{ machineId: string, amount: number }`
-  - **Response**: `{ success: boolean, message: string, transaction_id: string }`
-  - **Status Code**: 201 on success
-
-- **Get Transactions API**:
-  - **Method**: GET
-  - **Endpoint**: `/api/hardware/transaction`
-  - **Authentication**: `access_token` header required
-  - **Response**: List of transactions for the authenticated device
+- **Device Selection**: User-specific device list with status indicators
+- **Device Detail Page**: Device-specific transaction history at `/dashboard/sales-monitoring/[deviceId]`
+- **API Endpoints**: 
+  - `POST /api/hardware/transaction` - Send new transactions with `{ machineId, amount }`
+  - `GET /api/hardware/transaction` - Retrieve transaction history
+- **Multiple Authentication Methods**: Supports token-based, direct device ID, and test mode
 
 ### How to Use
 
-1. **For Administrators**:
-   - Navigate to Dashboard → System Management → Sales Monitoring
-   - View connected devices and their transaction capabilities
-   - Enter transaction amount and send to specific devices
-   - View transaction confirmation and status
+1. Navigate to Dashboard → System Management → Sales Monitoring
+2. View list of devices associated with your account
+3. Click on a device to view its transaction history
+4. Use the "Send Transaction" tab to initiate a new transaction
+5. Advanced options available for direct device authentication
 
-2. **For Developers**:
-   - Use the `sendTransaction` function from `hardwareApi.ts` to programmatically send transactions
-   - Ensure proper authentication by including access tokens in all requests
-   - Handle success/error responses appropriately in the UI
+---
+
+## Machine Status & Notifications Module
+
+The system now includes a complete Machine Status & Notifications Module that enables real-time status monitoring and notifications management:
+
+### Features
+
+- **Status Monitoring**: View current status and history of connected devices
+- **Status Updates**: Send status updates to devices with standardized codes
+- **Notifications System**: Automatic notifications for error conditions
+- **Status Tracking**: Historical record of all status changes
+- **User-Friendly Interface**: Intuitive UI for status monitoring and management
+
+### Technical Implementation
+
+- **Dashboard Page**: Available at `/dashboard/machine-status` with full sidebar integration
+- **Device Selection**: User-specific device list with status indicators
+- **Device Detail Page**: Device-specific status history at `/dashboard/machine-status/[deviceId]`
+- **API Endpoints**:
+  - `POST /api/hardware/status` - Send status updates with `{ code, description }`
+  - `GET /api/hardware/status` - Retrieve status history
+- **Status Codes**: Standardized codes for different device states (e.g., idle, active, error)
+- **Automatic Notifications**: System generates notifications for error status codes
+
+### Status Code Reference
+
+| Code Range | Description          | Example                      |
+|------------|----------------------|------------------------------|
+| 100-199    | Normal operation     | 100: Machine idle            |
+| 200-299    | Transitional states  | 200: Machine starting up     |
+| 300-399    | Warnings             | 300: Low supply warning      |
+| 400-499    | Errors               | 400: General error           |
+| 500-599    | Critical errors      | 500: Critical system error   |
+
+### How to Use
+
+1. Navigate to Dashboard → System Management → Machine Status & Notifications
+2. View list of devices associated with your account
+3. Click on a device to view its status history and notifications
+4. Use the "Send Status Update" tab to send a new status
+5. Receive and manage notifications for error conditions
+
+✅ **Implementation Status**: Fully implemented and tested with database integration.
+
+---
 
 
 

@@ -9,15 +9,6 @@ interface DeviceStatus {
   last_updated: string;
 }
 
-interface StatusHistoryItem {
-  id: string;
-  device_id: string;
-  machine_id: string;
-  status_code: number;
-  status_description: string;
-  timestamp: string;
-}
-
 /**
  * @swagger
  * /api/hardware/status:
@@ -59,7 +50,7 @@ export async function POST(req: NextRequest): Promise<Response> {
   try {
     // Parse request body first to check for test_mode
     const body = await req.json();
-    const { code, description, test_mode } = body;
+    const { code, description, test_mode, device_id } = body;
     
     // Handle test mode for development
     if (test_mode === true) {
@@ -74,6 +65,85 @@ export async function POST(req: NextRequest): Promise<Response> {
       }, { status: 200 });
     }
     
+    // Check for direct device_id in body for simplified machine-to-machine communication
+    if (device_id) {
+      console.log(`Using direct device ID: ${device_id} from request body`);
+      // Validate required fields
+      if (code === undefined || !description) {
+        return NextResponse.json({ 
+          error: "Status code and description are required" 
+        }, { status: 400 });
+      }
+
+      try {
+        // Verify device exists
+        const { data: deviceData, error: deviceError } = await supabase
+          .from("device_list")
+          .select("*")
+          .eq("device_id", device_id)
+          .single();
+
+        if (deviceError || !deviceData) {
+          console.error("Device not found:", deviceError);
+          return NextResponse.json({ error: "Device not found" }, { status: 401 });
+        }
+
+        // Record status update
+        const { error } = await supabase
+          .from("device_status_history")
+          .insert({
+            device_id,
+            machine_id: deviceData.device_reg_id || "unknown",
+            status_code: code,
+            status_description: description,
+            timestamp: new Date().toISOString()
+          });
+
+        if (error) {
+          console.error("Database error:", error);
+          return NextResponse.json({ error: "Failed to record status update" }, { status: 500 });
+        }
+
+        // Update current device status
+        const { error: updateError } = await supabase
+          .from("device_list")
+          .update({ 
+            device_status: code >= 400 ? "error" : "active",
+            last_updated: new Date().toISOString()
+          })
+          .eq("device_id", device_id);
+
+        if (updateError) {
+          console.error("Status update error:", updateError);
+          // Continue despite error, as we've already recorded the status history
+        }
+
+        // Check if this is an error status code (assuming codes >= 400 are errors)
+        if (code >= 400) {
+          // Create notification for admin/staff
+          await supabase
+            .from("notifications")
+            .insert({
+              type: "device_error",
+              title: `Machine Error: ${deviceData.device_reg_id || device_id}`,
+              message: `Error (${code}): ${description}`,
+              device_id,
+              is_read: false,
+              created_at: new Date().toISOString()
+            });
+        }
+
+        return NextResponse.json({ 
+          message: "Status updated successfully",
+          success: true
+        }, { status: 200 });
+      } catch (dbError) {
+        console.error("Database operation error:", dbError);
+        return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
+      }
+    }
+    
+    // Regular auth flow using token
     // For non-test mode, verify auth token
     const { authenticated, response, device } = await verifyHardwareAuth(req);
     
@@ -88,55 +158,66 @@ export async function POST(req: NextRequest): Promise<Response> {
       }, { status: 400 });
     }
 
-    // Record status update
-    const { error } = await supabase
-      .from("device_status_history")
-      .insert({
-        device_id: device.id,
-        machine_id: device.machine_id,
-        status_code: code,
-        status_description: description,
-        timestamp: new Date().toISOString()
-      });
-
-    if (error) {
-      console.error("Database error:", error);
-      return NextResponse.json({ error: "Failed to record status update" }, { status: 500 });
+    // Ensure device_id is a valid UUID
+    const deviceId = device.device_id || device.id;
+    if (!deviceId || deviceId === '0' || deviceId === 'undefined') {
+      return NextResponse.json({ error: "Invalid device ID" }, { status: 400 });
     }
 
-    // Update current device status
-    const { error: updateError } = await supabase
-      .from("devices")
-      .update({ 
-        status_code: code,
-        status_description: description,
-        last_status_update: new Date().toISOString()
-      })
-      .eq("id", device.id);
-
-    if (updateError) {
-      console.error("Status update error:", updateError);
-      // Continue despite error, as we've already recorded the status history
-    }
-
-    // Check if this is an error status code (assuming codes >= 400 are errors)
-    if (code >= 400) {
-      // Create notification for admin/staff
-      await supabase
-        .from("notifications")
+    try {
+      // Record status update
+      const { error } = await supabase
+        .from("device_status_history")
         .insert({
-          type: "device_error",
-          title: `Machine Error: ${device.machine_id}`,
-          message: `Error (${code}): ${description}`,
-          device_id: device.id,
-          is_read: false,
-          created_at: new Date().toISOString()
+          device_id: deviceId,
+          machine_id: device.machine_id,
+          status_code: code,
+          status_description: description,
+          timestamp: new Date().toISOString()
         });
-    }
 
-    return NextResponse.json({ 
-      message: "Status updated successfully" 
-    }, { status: 200 });
+      if (error) {
+        console.error("Database error:", error);
+        return NextResponse.json({ error: "Failed to record status update" }, { status: 500 });
+      }
+
+      // Update current device status
+      const { error: updateError } = await supabase
+        .from("device_list")
+        .update({ 
+          device_status: code >= 400 ? "error" : "active",
+          last_updated: new Date().toISOString()
+        })
+        .eq("device_id", deviceId);
+
+      if (updateError) {
+        console.error("Status update error:", updateError);
+        // Continue despite error, as we've already recorded the status history
+      }
+
+      // Check if this is an error status code (assuming codes >= 400 are errors)
+      if (code >= 400) {
+        // Create notification for admin/staff
+        await supabase
+          .from("notifications")
+          .insert({
+            type: "device_error",
+            title: `Machine Error: ${device.machine_id}`,
+            message: `Error (${code}): ${description}`,
+            device_id: deviceId,
+            is_read: false,
+            created_at: new Date().toISOString()
+          });
+      }
+
+      return NextResponse.json({ 
+        message: "Status updated successfully",
+        success: true
+      }, { status: 200 });
+    } catch (dbError) {
+      console.error("Database operation error:", dbError);
+      return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
+    }
   } catch (err) {
     console.error("Error updating status:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
@@ -232,31 +313,42 @@ export async function GET(req: NextRequest): Promise<Response> {
       return response || NextResponse.json({ error: "Authentication failed" }, { status: 401 });
     }
 
-    // Get recent status history for this device
-    const { data: statusHistory, error } = await supabase
-      .from("device_status_history")
-      .select("*")
-      .eq("device_id", device.id)
-      .order("timestamp", { ascending: false })
-      .limit(50);
-
-    if (error) {
-      return NextResponse.json({ error: "Failed to fetch status history" }, { status: 500 });
+    // Ensure device_id is a valid UUID
+    const deviceId = device.device_id;
+    if (!deviceId || deviceId === '0' || deviceId === 'undefined') {
+      return NextResponse.json({ error: "Invalid device ID" }, { status: 400 });
     }
 
-    // Get current status from device record
-    const currentStatus: DeviceStatus = {
-      code: device.status_code,
-      description: device.status_description,
-      last_updated: device.last_status_update
-    };
+    try {
+      // Get recent status history for this device
+      const { data: statusHistory, error } = await supabase
+        .from("device_status_history")
+        .select("*")
+        .eq("device_id", deviceId)
+        .order("timestamp", { ascending: false })
+        .limit(50);
 
-    return NextResponse.json({ 
-      current_status: currentStatus,
-      status_history: statusHistory as StatusHistoryItem[] || [] 
-    }, { status: 200 });
+      if (error) {
+        return NextResponse.json({ error: "Failed to fetch status history" }, { status: 500 });
+      }
+
+      // Get current device status
+      const currentStatus: DeviceStatus = {
+        code: statusHistory && statusHistory.length > 0 ? statusHistory[0].status_code : 100,
+        description: statusHistory && statusHistory.length > 0 ? statusHistory[0].status_description : "Unknown status",
+        last_updated: statusHistory && statusHistory.length > 0 ? statusHistory[0].timestamp : new Date().toISOString()
+      };
+
+      return NextResponse.json({ 
+        current_status: currentStatus,
+        status_history: statusHistory || []
+      }, { status: 200 });
+    } catch (dbError) {
+      console.error("Database operation error:", dbError);
+      return NextResponse.json({ error: "Database operation failed" }, { status: 500 });
+    }
   } catch (err) {
-    console.error("Error fetching status history:", err);
+    console.error("Error fetching status:", err);
     return NextResponse.json({ error: "Internal server error" }, { status: 500 });
   }
 } 
