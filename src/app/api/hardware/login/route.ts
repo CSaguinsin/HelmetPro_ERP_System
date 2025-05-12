@@ -1,6 +1,7 @@
-import { NextRequest, NextResponse } from "next/server";
-import { supabase } from "@/lib/supabase";
-import bcrypt from "bcryptjs";
+import { NextRequest, NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+import bcrypt from 'bcryptjs';
+import { signInJWT } from '../../jwt';
 
 /**
  * @swagger
@@ -46,16 +47,19 @@ export async function POST(req: NextRequest) {
     const identifier = username || email;
 
     if (!identifier || !password) {
-      return NextResponse.json({ error: "Username/email and password are required" }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Username/email and password are required' },
+        { status: 400 }
+      );
     }
 
     // First try to authenticate as a user (if email is provided)
     if (email) {
       // Fetch user from database
       const { data: userData, error: userError } = await supabase
-        .from("users")
-        .select("*")
-        .eq("email", email)
+        .from('users')
+        .select('*')
+        .eq('email', email)
         .single();
 
       if (!userError && userData) {
@@ -64,19 +68,29 @@ export async function POST(req: NextRequest) {
         if (userData.password === password) {
           try {
             // Generate a secure fallback token
-            const fallbackToken = btoa(JSON.stringify({
+
+            const fallbackToken = signInJWT({
+              id: userData.user_client_id,
               user_id: userData.erp_user_id,
               email: userData.email,
               user_client_id: userData.user_client_id,
               timestamp: Date.now(),
               // Add a simple signature
-              sig: btoa(`${userData.erp_user_id}:${Date.now()}:${userData.password.substring(0, 5)}`)
-            }));
-            
-            return NextResponse.json({ access_token: fallbackToken }, { status: 200 });
+              sig: btoa(
+                `${userData.erp_user_id}:${Date.now()}:${userData.password.substring(0, 5)}`
+              ),
+            });
+
+            return NextResponse.json(
+              { access_token: fallbackToken, clientId: userData.user_client_id },
+              { status: 200 }
+            );
           } catch (err) {
-            console.error("Token generation error:", err);
-            return NextResponse.json({ error: "Failed to generate token" }, { status: 500 });
+            console.error('Token generation error:', err);
+            return NextResponse.json(
+              { error: 'Failed to generate token' },
+              { status: 500 }
+            );
           }
         }
       }
@@ -85,34 +99,39 @@ export async function POST(req: NextRequest) {
     // If user authentication failed or no email was provided, try device authentication
     // Fetch device from database
     const { data: device, error } = await supabase
-      .from("devices")
-      .select("*")
-      .eq("username", identifier)
+      .from('devices')
+      .select('*')
+      .eq('username', identifier)
       .single();
 
     if (error || !device) {
-      return NextResponse.json({ error: "Authentication failed" }, { status: 401 });
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
     }
 
     // Verify password
     const passwordMatch = await bcrypt.compare(password, device.password_hash);
     if (!passwordMatch) {
-      return NextResponse.json({ error: "Authentication failed" }, { status: 401 });
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
     }
 
     // Generate JWT token using signIn with device credentials
-    const { data: tokenData, error: tokenError } = await supabase.auth.signInWithPassword({
-      email: `device_${device.id}@helmetpro.internal`,
-      password,
-    });
+    const { data: tokenData, error: tokenError } = await supabase.auth.signInWithPassword(
+      {
+        email: `device_${device.id}@helmetpro.internal`,
+        password,
+      }
+    );
 
     if (tokenError) {
-      return NextResponse.json({ error: "Failed to generate token" }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to generate token' }, { status: 500 });
     }
 
-    return NextResponse.json({ access_token: tokenData.session.access_token }, { status: 200 });
+    return NextResponse.json(
+      { access_token: tokenData.session.access_token },
+      { status: 200 }
+    );
   } catch (err) {
-    console.error("Server error:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error('Server error:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}

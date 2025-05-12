@@ -2,7 +2,7 @@
 export interface DeviceDetails {
   device_id: number;
   device_name: string;
-  device_status: "Disable" | "Enable" | "Maintenance";
+  device_status: 'Disable' | 'Enable' | 'Maintenance';
   device_type: string;
   status: string;
   protocol_type: string;
@@ -38,11 +38,11 @@ export interface ApiResponse<T> {
 
 // Helper function to get auth token
 const getAuthToken = (): string => {
-  if (typeof window === "undefined") return '';
-  
+  if (typeof window === 'undefined') return '';
+
   const token = localStorage.getItem('auth_token') || '';
   if (!token) return '';
-  
+
   // For API calls, we need to include the user_client_id in the request headers
   // if the token is our custom fallback token, extract the user_client_id
   if (!token.includes('.')) {
@@ -54,10 +54,10 @@ const getAuthToken = (): string => {
         localStorage.setItem('api_user_client_id', tokenData.user_client_id);
       }
     } catch (e) {
-      console.warn("Failed to parse fallback token", e);
+      console.warn('Failed to parse fallback token', e);
     }
   }
-  
+
   return token;
 };
 
@@ -75,7 +75,7 @@ const apiCall = async <T>(
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     // Use different auth header format based on token type
     if (token.includes('.')) {
       // JWT token from Supabase - use Bearer format
@@ -83,14 +83,15 @@ const apiCall = async <T>(
     } else {
       // Our fallback token - use custom header
       headers['access_token'] = token;
-      
+
       // Also add user_client_id for additional verification
-      const userClientId = localStorage.getItem('api_user_client_id') || 
-                          localStorage.getItem('user_client_id');
+      const userClientId =
+        localStorage.getItem('api_user_client_id') ||
+        localStorage.getItem('user_client_id');
       if (userClientId) {
         headers['x-user-client-id'] = userClientId;
       }
-      
+
       // Add device info if available
       const deviceInfo = localStorage.getItem('device_info');
       if (deviceInfo) {
@@ -105,10 +106,14 @@ const apiCall = async <T>(
     });
 
     const result = await response.json();
-    
+
     // Special handling for the "No device associated" error
     if (!response.ok) {
-      if (response.status === 404 && result.error && result.error.includes('No device associated with this user')) {
+      if (
+        response.status === 404 &&
+        result.error &&
+        result.error.includes('No device associated with this user')
+      ) {
         // For device-details endpoint, return empty data instead of throwing
         if (endpoint.startsWith('device-details')) {
           return { data: undefined } as ApiResponse<T>;
@@ -116,26 +121,26 @@ const apiCall = async <T>(
       }
       throw new Error(result.error || 'API call failed');
     }
-    
+
     // Transform device data from device-details endpoint to match the expected structure
     if (endpoint.startsWith('device-details') && result.device) {
       // Map the API response to our DeviceDetails interface
       const transformedData = {
         device_id: parseInt(result.device.id) || 0,
-        device_name: result.device.machine_id || "Unknown Device",
-        device_status: result.device.status === "active" ? "Enable" : "Disable",
-        device_type: result.device.model || "HelmetPro Standard",
-        status: result.device.status || "active",
-        protocol_type: "Standard",
-        maturity_time: "",
-        department: "",
-        customer_name: "",
-        device_reg_id: result.device.machine_id || "Unknown"
+        device_name: result.device.machine_id || 'Unknown Device',
+        device_status: result.device.status === 'active' ? 'Enable' : 'Disable',
+        device_type: result.device.model || 'HelmetPro Standard',
+        status: result.device.status || 'active',
+        protocol_type: 'Standard',
+        maturity_time: '',
+        department: '',
+        customer_name: '',
+        device_reg_id: result.device.machine_id || 'Unknown',
       };
-      
+
       return { data: transformedData as unknown as T };
     }
-    
+
     return result;
   } catch (error) {
     console.error(`API call to ${endpoint} failed:`, error);
@@ -144,7 +149,9 @@ const apiCall = async <T>(
 };
 
 // Device Details API
-export const getDeviceDetails = async (deviceId?: string | number): Promise<ApiResponse<DeviceDetails>> => {
+export const getDeviceDetails = async (
+  deviceId?: string | number
+): Promise<ApiResponse<DeviceDetails>> => {
   let endpoint = 'device-details';
   if (deviceId) {
     endpoint += `?device_id=${deviceId}`;
@@ -155,94 +162,62 @@ export const getDeviceDetails = async (deviceId?: string | number): Promise<ApiR
 // Assets API
 export const getAssets = async (): Promise<ApiResponse<MediaFile[]>> => {
   try {
-    // Get auth token
-    const token = getAuthToken();
-    if (!token) return { error: 'No authentication token found' };
-    
-    // Create headers with the correct authorization format
-    const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
-    };
-    
-    // Use different auth header format based on token type
-    if (token.includes('.')) {
-      // JWT token from Supabase - use Bearer format
-      headers['Authorization'] = `Bearer ${token}`;
-    } else {
-      // Our fallback token - use custom header
-      headers['access_token'] = token;
-    }
-    
-    // Add user_client_id for additional verification
-    const userClientId = localStorage.getItem('api_user_client_id') || 
-                         localStorage.getItem('user_client_id');
-    if (userClientId) {
-      headers['x-user-client-id'] = userClientId;
-    }
-    
-    // Add device info if available
     const deviceInfoStr = localStorage.getItem('device_info');
-    if (deviceInfoStr) {
-      try {
-        const deviceInfo = JSON.parse(deviceInfoStr);
-        headers['x-device-info'] = deviceInfoStr;
-        
-        // Set up endpoint with deviceId as query parameter
-        const endpoint = `assets?deviceId=${deviceInfo.device_id}`;
-        
-        // Make the request
-        const response = await fetch(`/api/hardware/${endpoint}`, {
-          method: 'GET',
-          headers,
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          console.error('Asset fetch error:', errorData);
-          return { error: errorData.error || `Failed to fetch assets: ${response.status}` };
-        }
-        
-        const result = await response.json();
-        
-        // Handle both old and new response formats
-        if (result.data) {
-          // New format - direct data array
-          return { data: Array.isArray(result.data) ? result.data as MediaFile[] : [] };
-        } else if (result.assets) {
-          // Old format - assets array
-          const mappedAssets = result.assets.map((asset: { id: string; type: string; name: string; url: string }) => ({
-            id: asset.id,
-            file_type: asset.type,
-            file_name: asset.name,
-            file_url: asset.url
-          }));
-          return { data: mappedAssets };
-        }
-        
-        // Fallback - empty array
-        return { data: [] };
-      } catch (parseError) {
-        console.error('Failed to parse device info:', parseError);
-        return { error: 'Invalid device info format' };
-      }
-    } else {
-      // No device info available
-      return { data: [] };
+    const endpoint = deviceInfoStr
+      ? `assets?deviceId=${JSON.parse(deviceInfoStr).device_id}`
+      : 'assets';
+
+    // Directly get response and handle types explicitly to avoid typing issues
+    const response = await fetch(`/api/hardware/${endpoint}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        access_token: getAuthToken() || '',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      return { error: errorData.error || 'Failed to fetch assets' };
     }
+
+    const result = await response.json();
+
+    // Handle both old and new response formats
+    if (result.data) {
+      // New format - direct data array
+      return { data: Array.isArray(result.data) ? (result.data as MediaFile[]) : [] };
+    } else if (result.assets) {
+      // Old format - assets array
+      const mappedAssets = result.assets.map(
+        (asset: { id: string; type: string; name: string; url: string }) => ({
+          id: asset.id,
+          file_type: asset.type,
+          file_name: asset.name,
+          file_url: asset.url,
+        })
+      );
+      return { data: mappedAssets };
+    }
+
+    // Fallback - empty array
+    return { data: [] };
   } catch (error) {
     console.error('Error fetching assets:', error);
     return { error: error instanceof Error ? error.message : 'Failed to fetch assets' };
   }
 };
 
-export const uploadAsset = async (formData: FormData): Promise<ApiResponse<MediaFile>> => {
+export const uploadAsset = async (
+  formData: FormData
+): Promise<ApiResponse<MediaFile>> => {
   const token = getAuthToken();
   if (!token) throw new Error('No authentication token found');
 
   try {
     // Create headers with the correct authorization format
     const headers: Record<string, string> = {};
-    
+
     // Use different auth header format based on token type
     if (token.includes('.')) {
       // JWT token from Supabase - use Bearer format
@@ -250,14 +225,15 @@ export const uploadAsset = async (formData: FormData): Promise<ApiResponse<Media
     } else {
       // Our fallback token - use custom header
       headers['access_token'] = token;
-      
+
       // Also add user_client_id for additional verification
-      const userClientId = localStorage.getItem('api_user_client_id') || 
-                          localStorage.getItem('user_client_id');
+      const userClientId =
+        localStorage.getItem('api_user_client_id') ||
+        localStorage.getItem('user_client_id');
       if (userClientId) {
         headers['x-user-client-id'] = userClientId;
       }
-      
+
       // Add device info if available
       const deviceInfo = localStorage.getItem('device_info');
       if (deviceInfo) {
@@ -265,7 +241,6 @@ export const uploadAsset = async (formData: FormData): Promise<ApiResponse<Media
       }
     }
 
-    // Use the standard hardware/assets endpoint as specified in requirements
     const response = await fetch('/api/hardware/assets', {
       method: 'POST',
       headers,
@@ -281,25 +256,15 @@ export const uploadAsset = async (formData: FormData): Promise<ApiResponse<Media
   }
 };
 
-// Firmware API interface
-export interface FirmwareInfo {
-  version: string;
-  bin_url: string;
-  md5_hash: string;
-  release_notes: string;
-}
-
 // Firmware API
-export const getFirmware = async (currentVersion?: string): Promise<ApiResponse<FirmwareInfo>> => {
-  let endpoint = 'firmware';
-  if (currentVersion) {
-    endpoint += `?version=${encodeURIComponent(currentVersion)}`;
-  }
-  return apiCall<FirmwareInfo>(endpoint);
+export const getFirmware = async (): Promise<ApiResponse<{ url: string }>> => {
+  return apiCall<{ url: string }>('firmware');
 };
 
 // Settings API
-export const getSettings = async (deviceId?: string | number): Promise<ApiResponse<DeviceSettings>> => {
+export const getSettings = async (
+  deviceId?: string | number
+): Promise<ApiResponse<DeviceSettings>> => {
   let endpoint = 'settings';
   if (deviceId) {
     endpoint += `?deviceId=${deviceId}`;
@@ -307,7 +272,10 @@ export const getSettings = async (deviceId?: string | number): Promise<ApiRespon
   return apiCall<DeviceSettings>(endpoint);
 };
 
-export const updateSettings = async (settings: Partial<DeviceSettings>, deviceId?: string | number): Promise<ApiResponse<DeviceSettings>> => {
+export const updateSettings = async (
+  settings: Partial<DeviceSettings>,
+  deviceId?: string | number
+): Promise<ApiResponse<DeviceSettings>> => {
   let endpoint = 'settings';
   if (deviceId) {
     endpoint += `?deviceId=${deviceId}`;
@@ -317,181 +285,24 @@ export const updateSettings = async (settings: Partial<DeviceSettings>, deviceId
 
 // Transaction API
 export const sendTransaction = async (
-  machineId: string, 
-  amount: number,
-  options?: { deviceToken?: string; deviceId?: string }
-): Promise<ApiResponse<{ success: boolean; message: string; transaction_id?: string }>> => {
-  // If we have a device token, use that directly
-  if (options?.deviceToken) {
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'access_token': options.deviceToken
-      };
-      
-      // Prepare request body
-      const body: Record<string, any> = { 
-        machineId, 
-        amount 
-      };
-      
-      // If deviceId is provided, add it to the request
-      if (options.deviceId) {
-        body.device_id = options.deviceId;
-      }
-      
-      const response = await fetch('/api/hardware/transaction', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body)
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Transaction failed');
-      }
-      
-      return result;
-    } catch (error) {
-      console.error(`API call to transaction failed:`, error);
-      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
-    }
-  }
-  
-  // If we have a device ID but no token, send it directly with the request
-  if (options?.deviceId && !options?.deviceToken) {
-    try {
-      const response = await fetch('/api/hardware/transaction', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          machineId,
-          amount,
-          device_id: options.deviceId
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Transaction failed');
-      }
-      
-      return result;
-    } catch (error) {
-      console.error(`API call to transaction failed:`, error);
-      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
-    }
-  }
-  
-  // Default behavior using normal authentication
-  const result = await apiCall<{ success: boolean; message: string; transaction_id?: string }>('transaction', 'POST', { machineId, amount });
-  
-  // If authentication fails, use test mode as a fallback
-  if (result.error?.includes('Authentication failed')) {
-    console.log('Authentication failed, retrying with test mode');
-    return apiCall<{ success: boolean; message: string; transaction_id?: string }>('transaction', 'POST', { 
-      machineId, 
-      amount, 
-      test_mode: true 
-    });
-  }
-  
-  return result;
+  machineId: string,
+  amount: number
+): Promise<ApiResponse<{ success: boolean }>> => {
+  return apiCall<{ success: boolean }>('transaction', 'POST', { machineId, amount });
 };
 
 // Status API
 export const sendStatus = async (
-  code: number, 
-  description: string, 
-  options?: { deviceToken?: string; deviceId?: string }
+  code: number,
+  description: string
 ): Promise<ApiResponse<{ success: boolean }>> => {
-  // If we have a device token, use that directly
-  if (options?.deviceToken) {
-    try {
-      const headers: Record<string, string> = {
-        'Content-Type': 'application/json',
-        'access_token': options.deviceToken
-      };
-      
-      // Prepare request body with optional device_id for direct machine-to-machine communication
-      const body: Record<string, any> = { 
-        code, 
-        description 
-      };
-      
-      // If deviceId is provided, add it to the request
-      if (options.deviceId) {
-        body.device_id = options.deviceId;
-      }
-      
-      const response = await fetch('/api/hardware/status', {
-        method: 'POST',
-        headers,
-        body: JSON.stringify(body)
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Status update failed');
-      }
-      
-      return result;
-    } catch (error) {
-      console.error(`API call to status failed:`, error);
-      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
-    }
-  }
-  
-  // If we have a device ID but no token, send it directly with the request
-  if (options?.deviceId && !options?.deviceToken) {
-    try {
-      const response = await fetch('/api/hardware/status', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          code,
-          description,
-          device_id: options.deviceId
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Status update failed');
-      }
-      
-      return result;
-    } catch (error) {
-      console.error(`API call to status failed:`, error);
-      return { error: error instanceof Error ? error.message : 'Unknown error occurred' };
-    }
-  }
-  
-  // Default behavior - try with normal authentication first
-  const result = await apiCall<{ success: boolean }>('status', 'POST', { code, description });
-  
-  // If authentication fails, use test mode as a fallback
-  if (result.error?.includes('Authentication failed')) {
-    console.log('Authentication failed, retrying with test mode');
-    return apiCall<{ success: boolean }>('status', 'POST', { 
-      code, 
-      description, 
-      test_mode: true 
-    });
-  }
-  
-  return result;
+  return apiCall<{ success: boolean }>('status', 'POST', { code, description });
 };
 
 // Feedback API
-export const sendFeedback = async (machineId: string, rating: number): Promise<ApiResponse<{ success: boolean }>> => {
+export const sendFeedback = async (
+  machineId: string,
+  rating: number
+): Promise<ApiResponse<{ success: boolean }>> => {
   return apiCall<{ success: boolean }>('feedback', 'POST', { machineId, rating });
-}; 
+};
