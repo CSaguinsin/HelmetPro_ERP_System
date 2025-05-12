@@ -83,8 +83,6 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const result = await verifyHardwareAuth(req);
 
-  console.log('result:', result);
-
   if (!result) {
     return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
   }
