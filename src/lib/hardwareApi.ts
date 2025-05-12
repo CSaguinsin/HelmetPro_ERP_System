@@ -316,8 +316,8 @@ export const updateSettings = async (settings: Partial<DeviceSettings>, deviceId
 };
 
 // Transaction API
-export const sendTransaction = async (machineId: string, amount: number): Promise<ApiResponse<{ success: boolean }>> => {
-  return apiCall<{ success: boolean }>('transaction', 'POST', { machineId, amount });
+export const sendTransaction = async (machineId: string, amount: number): Promise<ApiResponse<{ success: boolean; message: string; transaction_id?: string }>> => {
+  return apiCall<{ success: boolean; message: string; transaction_id?: string }>('transaction', 'POST', { machineId, amount });
 };
 
 // Status API

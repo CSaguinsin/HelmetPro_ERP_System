@@ -248,9 +248,58 @@ A comprehensive test script (`scripts/test-firmware.js`) is included to verify:
 2. **For Devices**:
    - Devices query `/api/hardware/firmware?version=current_version` with auth token
    - If newer firmware is available, response includes download URL and MD5 hash
-   - No content (204) response if device firmware is current
 
 ---
+
+## Sales Monitoring Module
+
+The system now includes a comprehensive Sales Monitoring Module that allows tracking and managing transactions from connected devices:
+
+### Features
+
+- **Transaction Management**: View and send transactions to connected devices
+- **Device-Specific Transactions**: Transactions are associated with specific devices
+- **Real-Time Updates**: Send transactions and receive immediate confirmation
+- **Secure API**: All transaction operations require proper authentication
+- **User-Friendly Interface**: Clean UI for monitoring and initiating transactions
+
+### Technical Implementation
+
+- **Dashboard Page**: Available at `/dashboard/sales-monitoring` with full sidebar integration
+- **API Endpoints**:
+  - `POST /api/hardware/transaction` - For sending new transactions
+  - `GET /api/hardware/transaction` - For retrieving transaction history
+- **Database**: Transactions stored in relational database with proper indexing
+- **Authentication**: All transaction operations require valid access tokens
+
+### Transaction API Specification
+
+- **Send Transaction API**:
+  - **Method**: POST
+  - **Endpoint**: `/api/hardware/transaction`
+  - **Authentication**: `access_token` header required
+  - **Request Body**: `{ machineId: string, amount: number }`
+  - **Response**: `{ success: boolean, message: string, transaction_id: string }`
+  - **Status Code**: 201 on success
+
+- **Get Transactions API**:
+  - **Method**: GET
+  - **Endpoint**: `/api/hardware/transaction`
+  - **Authentication**: `access_token` header required
+  - **Response**: List of transactions for the authenticated device
+
+### How to Use
+
+1. **For Administrators**:
+   - Navigate to Dashboard → System Management → Sales Monitoring
+   - View connected devices and their transaction capabilities
+   - Enter transaction amount and send to specific devices
+   - View transaction confirmation and status
+
+2. **For Developers**:
+   - Use the `sendTransaction` function from `hardwareApi.ts` to programmatically send transactions
+   - Ensure proper authentication by including access tokens in all requests
+   - Handle success/error responses appropriately in the UI
 
 
 

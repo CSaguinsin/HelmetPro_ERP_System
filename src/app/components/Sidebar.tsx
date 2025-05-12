@@ -47,6 +47,7 @@ const menuItems: MenuItem[] = [
     icon: Cog,
     subItems: [
       { title: "Firmware Management", href: "/dashboard/firmware" },
+      { title: "Sales Monitoring", href: "/dashboard/sales-monitoring" },
     ],
   },
 ]
