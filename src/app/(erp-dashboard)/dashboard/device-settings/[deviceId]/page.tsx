@@ -157,10 +157,45 @@ export default function DeviceSettingsPage() {
             timezone: settingsData.timezone,
           };
         } else {
-          // No settings yet, use defaults
-          deviceSettings = {
-            ...defaultSettings,
+          // No settings yet, create default settings
+          const defaultSettings = {
+            device_id: deviceIdString,
+            required_payment_amount: 50.00,
+            payment_methods: ["coin_slot"],
             machine_id: deviceData.device_reg_id || `MACHINE-${deviceIdString}`,
+            smoke_duration: 30,
+            smoke_repeat_every: 5,
+            uv_light_duration: 30,
+            blower_drying_time: 60,
+            blower_drying_repeat_every: 10,
+            open_door_after: 120,
+            timezone: "Asia/Manila",
+            updated_by: user?.erp_user_id,
+          };
+          
+          // Insert default settings
+          const { error: insertError } = await supabase
+            .from("device_settings")
+            .insert([defaultSettings]);
+            
+          if (insertError) {
+            console.error("Error creating default settings:", insertError);
+            setError("Failed to create default device settings");
+            setLoading(false);
+            return;
+          }
+          
+          deviceSettings = {
+            required_payment_amount: defaultSettings.required_payment_amount,
+            payment_methods: defaultSettings.payment_methods,
+            machine_id: defaultSettings.machine_id,
+            smoke_duration: defaultSettings.smoke_duration,
+            smoke_repeat_every: defaultSettings.smoke_repeat_every,
+            uv_light_duration: defaultSettings.uv_light_duration,
+            blower_drying_time: defaultSettings.blower_drying_time,
+            blower_drying_repeat_every: defaultSettings.blower_drying_repeat_every,
+            open_door_after: defaultSettings.open_door_after,
+            timezone: defaultSettings.timezone,
           };
         }
         

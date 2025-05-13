@@ -255,6 +255,36 @@ export default function AddDeviceInfo({ onClose, onDeviceAdded }: AddDeviceInfoP
       
       console.log("Device inserted successfully!");
       
+      // 3. Create default device settings
+      const defaultSettings = {
+        device_id: deviceUUID,
+        required_payment_amount: 50.00,
+        payment_methods: ["coin_slot"],
+        machine_id: deviceData.device_reg_id,
+        smoke_duration: 30,
+        smoke_repeat_every: 5,
+        uv_light_duration: 30,
+        blower_drying_time: 60,
+        blower_drying_repeat_every: 10,
+        open_door_after: 120,
+        timezone: "Asia/Manila",
+        updated_by: user?.id || clientId,
+      };
+      
+      console.log("Creating default device settings:", defaultSettings);
+      
+      const { error: settingsError } = await supabase
+        .from("device_settings")
+        .insert([defaultSettings]);
+        
+      if (settingsError) {
+        console.error("Error creating default settings:", settingsError);
+        console.error("Error details:", JSON.stringify(settingsError, null, 2));
+        // Don't return, as we still want to complete the device creation process
+      } else {
+        console.log("Default device settings created successfully!");
+      }
+      
       // Store the relationship in localStorage for quick reference
       localStorage.setItem("device_id", deviceUUID);
       localStorage.setItem("user_client_device_mapping", JSON.stringify({
