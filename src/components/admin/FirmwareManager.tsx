@@ -317,7 +317,7 @@ const FirmwareManager: React.FC = () => {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {firmwareList.map((firmware) => (
+                {firmwareList.map((firmware, idx) => (
                   <tr key={firmware.id}>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {firmware.version}
@@ -325,8 +325,14 @@ const FirmwareManager: React.FC = () => {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {firmware.device_model}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {new Date(firmware.release_date).toLocaleDateString()}
+                    <td
+                      className={
+                        idx == 0
+                          ? 'px-6 py-4 whitespace-nowrap text-sm text-green-600 font-bold'
+                          : 'px-6 py-4 whitespace-nowrap text-sm text-gray-500'
+                      }
+                    >
+                      {`${new Date(firmware.release_date).toLocaleDateString()} ${idx == 0 ? '(Latest)' : ''}`}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <span className="font-mono text-xs">

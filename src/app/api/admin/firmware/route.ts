@@ -79,7 +79,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     }
 
     // Order by version (descending)
-    query = query.order('release_date', { ascending: false });
+    query = query.order('id', { ascending: false });
 
     const { data: firmwareList, error } = await query;
 
