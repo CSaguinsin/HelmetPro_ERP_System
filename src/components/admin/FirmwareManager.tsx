@@ -17,9 +17,9 @@ const FirmwareManager: React.FC = () => {
   const [deviceModels] = useState<string[]>([
     'HelmetPro Standard',
     'HelmetPro X2',
-    'HelmetPro Mini'
+    'HelmetPro Mini',
   ]);
-  
+
   // Form states
   const [version, setVersion] = useState('');
   const [deviceModel, setDeviceModel] = useState(deviceModels[0]);
@@ -28,7 +28,10 @@ const FirmwareManager: React.FC = () => {
   const [releaseDate, setReleaseDate] = useState(
     new Date().toISOString().split('T')[0] // Current date in YYYY-MM-DD format
   );
-  const [uploadStatus, setUploadStatus] = useState<{ success: boolean; message: string } | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<{
+    success: boolean;
+    message: string;
+  } | null>(null);
 
   // Get auth token from localStorage
   const getAuthToken = useCallback((): string => {
@@ -40,17 +43,17 @@ const FirmwareManager: React.FC = () => {
   const getAuthHeaders = useCallback((): HeadersInit => {
     const token = getAuthToken();
     if (!token) return {};
-    
+
     // Return appropriate headers based on token type
     if (token.includes('.')) {
       // JWT token (Supabase)
       return {
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       };
     } else {
       // Custom token
       return {
-        'access_token': token
+        access_token: token,
       };
     }
   }, [getAuthToken]);
@@ -59,18 +62,20 @@ const FirmwareManager: React.FC = () => {
   const fetchFirmwareList = useCallback(async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const response = await fetch('/api/admin/firmware', {
         headers: getAuthHeaders(),
       });
-      
+
       const data = await response.json();
-      
+
+      console.log('Firmware list response:', data); // Debugging log
+
       if (!response.ok) {
         throw new Error(data.error || 'Failed to fetch firmware list');
       }
-      
+
       setFirmwareList(data.firmwareList || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unknown error occurred');
@@ -96,17 +101,17 @@ const FirmwareManager: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setUploadStatus(null);
-    
+
     if (!file) {
       setUploadStatus({ success: false, message: 'Please select a firmware file' });
       return;
     }
-    
+
     if (!version) {
       setUploadStatus({ success: false, message: 'Please enter a version number' });
       return;
     }
-    
+
     try {
       // Create form data
       const formData = new FormData();
@@ -115,38 +120,38 @@ const FirmwareManager: React.FC = () => {
       formData.append('deviceModel', deviceModel);
       formData.append('releaseNotes', releaseNotes);
       formData.append('releaseDate', releaseDate);
-      
+
       // Upload firmware
       const response = await fetch('/api/admin/firmware', {
         method: 'POST',
         headers: getAuthHeaders(),
-        body: formData
+        body: formData,
       });
-      
+
       const result = await response.json();
-      
+
       if (!response.ok) {
         throw new Error(result.error || 'Failed to upload firmware');
       }
-      
+
       // Reset form
       setFile(null);
       setVersion('');
       setReleaseNotes('');
       setReleaseDate(new Date().toISOString().split('T')[0]);
-      
+
       // Set success status
-      setUploadStatus({ 
-        success: true, 
-        message: `Firmware v${result.data.version} uploaded successfully` 
+      setUploadStatus({
+        success: true,
+        message: `Firmware v${result.data.version} uploaded successfully`,
       });
-      
+
       // Refresh firmware list
       fetchFirmwareList();
     } catch (err) {
       setUploadStatus({
         success: false,
-        message: err instanceof Error ? err.message : 'Failed to upload firmware'
+        message: err instanceof Error ? err.message : 'Failed to upload firmware',
       });
       console.error('Error uploading firmware:', err);
     }
@@ -154,21 +159,25 @@ const FirmwareManager: React.FC = () => {
 
   // Handle firmware deletion
   const handleDelete = async (id: number) => {
-    if (!confirm('Are you sure you want to delete this firmware version? This action cannot be undone.')) {
+    if (
+      !confirm(
+        'Are you sure you want to delete this firmware version? This action cannot be undone.'
+      )
+    ) {
       return;
     }
-    
+
     try {
       const response = await fetch(`/api/admin/firmware?id=${id}`, {
         method: 'DELETE',
-        headers: getAuthHeaders()
+        headers: getAuthHeaders(),
       });
-      
+
       if (!response.ok) {
         const error = await response.json();
         throw new Error(error.error || 'Failed to delete firmware');
       }
-      
+
       // Refresh firmware list
       fetchFirmwareList();
     } catch (err) {
@@ -180,7 +189,7 @@ const FirmwareManager: React.FC = () => {
   return (
     <div className="p-6 bg-white rounded-lg shadow">
       <h2 className="text-2xl font-semibold mb-6">Firmware Management</h2>
-      
+
       {/* Upload Form */}
       <div className="mb-8 p-4 bg-gray-50 rounded-md">
         <h3 className="text-lg font-medium mb-4">Upload New Firmware</h3>
@@ -199,7 +208,7 @@ const FirmwareManager: React.FC = () => {
                 required
               />
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Device Model
@@ -216,7 +225,7 @@ const FirmwareManager: React.FC = () => {
                 ))}
               </select>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Firmware File (.bin)
@@ -228,11 +237,9 @@ const FirmwareManager: React.FC = () => {
                 className="w-full p-2 border rounded focus:ring focus:ring-blue-300"
                 required
               />
-              <span className="text-xs text-gray-500">
-                Only .bin files are supported
-              </span>
+              <span className="text-xs text-gray-500">Only .bin files are supported</span>
             </div>
-            
+
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Release Date
@@ -245,7 +252,7 @@ const FirmwareManager: React.FC = () => {
               />
             </div>
           </div>
-          
+
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Release Notes
@@ -258,7 +265,7 @@ const FirmwareManager: React.FC = () => {
               placeholder="Enter release notes (optional)"
             />
           </div>
-          
+
           <div className="flex justify-end">
             <button
               type="submit"
@@ -268,14 +275,16 @@ const FirmwareManager: React.FC = () => {
             </button>
           </div>
         </form>
-        
+
         {uploadStatus && (
-          <div className={`mt-4 p-3 rounded ${uploadStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+          <div
+            className={`mt-4 p-3 rounded ${uploadStatus.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}
+          >
             {uploadStatus.message}
           </div>
         )}
       </div>
-      
+
       {/* Firmware List */}
       <div>
         <h3 className="text-lg font-medium mb-4">Firmware Versions</h3>
@@ -320,7 +329,9 @@ const FirmwareManager: React.FC = () => {
                       {new Date(firmware.release_date).toLocaleDateString()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      <span className="font-mono text-xs">{firmware.md5_hash.substring(0, 10)}...</span>
+                      <span className="font-mono text-xs">
+                        {firmware.md5_hash.substring(0, 10)}...
+                      </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       <button
@@ -341,4 +352,4 @@ const FirmwareManager: React.FC = () => {
   );
 };
 
-export default FirmwareManager; 
+export default FirmwareManager;

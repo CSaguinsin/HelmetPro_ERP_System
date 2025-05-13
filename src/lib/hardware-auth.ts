@@ -2,14 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from './supabase';
 import { getUser, IJwtPayload } from '@/app/api/jwt';
 import { UserResponse } from '@supabase/supabase-js';
+import { IDevice } from '@/app/api/hardware/settings/route';
 
 // Sample device data for admin users in development mode
 const adminDeviceSample = {
   id: 'admin-device-001',
   machine_id: 'HELMETPRO-ADMIN-DEV-001',
   model: 'HelmetPro X2',
-  firmware_version: '2.0.1',
-  hardware_version: '1.0.0',
   status: 'active',
   username: 'admindevice',
   location: 'Admin Office',
@@ -168,16 +167,15 @@ export async function verifyHardwareAuth(req: NextRequest) {
 
           if (!deviceError && device) {
             // Convert to expected device format
-            const formattedDevice = {
+            const formattedDevice: IDevice = {
               id: device.device_id.toString(),
               machine_id: device.device_reg_id || 'unknown',
               model: device.device_type || 'HelmetPro Standard',
-              firmware_version: '1.0.0',
-              hardware_version: '1.0.0',
               status: device.device_status.toLowerCase(),
               location: null,
               last_connection: device.updated_at,
               registered_at: device.created_at,
+              firmware_version_installed: device.firmware_version_installed || '1.0.0',
             };
 
             return {
@@ -203,16 +201,16 @@ export async function verifyHardwareAuth(req: NextRequest) {
 
               if (!deviceError && device) {
                 // Convert to expected device format
-                const formattedDevice = {
+                const formattedDevice: IDevice = {
                   id: device.device_id.toString(),
                   machine_id: device.device_reg_id || 'unknown',
                   model: device.device_type || 'HelmetPro Standard',
-                  firmware_version: '1.0.0',
-                  hardware_version: '1.0.0',
                   status: device.device_status.toLowerCase(),
                   location: null,
                   last_connection: device.updated_at,
                   registered_at: device.created_at,
+                  firmware_version_installed:
+                    device.firmware_version_installed || '1.0.0',
                 };
 
                 return {
@@ -229,17 +227,6 @@ export async function verifyHardwareAuth(req: NextRequest) {
         }
       }
 
-      // // Special case for admins in development mode
-      // if (false && isDev && userData.email === 'admin@helmetprosolutions.com') {
-      //   console.log('Using simulated device for admin user in development mode');
-      //   return {
-      //     authenticated: true,
-      //     response: null,
-      //     device: adminDeviceSample,
-      //     user: userData,
-      //   };
-      // }
-
       const { data: device, error: deviceError } = await supabase
         .from('device_list')
         .select('*')
@@ -248,16 +235,15 @@ export async function verifyHardwareAuth(req: NextRequest) {
 
       if (!deviceError && device) {
         // Convert to expected device format
-        const formattedDevice = {
+        const formattedDevice: IDevice = {
           id: device.device_id.toString(),
           machine_id: device.device_reg_id || 'unknown',
           model: device.device_type || 'HelmetPro Standard',
-          firmware_version: '1.0.0',
-          hardware_version: '1.0.0',
           status: device.device_status.toLowerCase(),
           location: null,
           last_connection: device.updated_at,
           registered_at: device.created_at,
+          firmware_version_installed: device.firmware_version_installed || '1.0.0',
         };
 
         return {
@@ -339,16 +325,15 @@ export async function verifyHardwareAuth(req: NextRequest) {
 
           if (!deviceError && device) {
             // Convert to expected device format
-            const formattedDevice = {
+            const formattedDevice: IDevice = {
               id: device.device_id.toString(),
               machine_id: device.device_reg_id || 'unknown',
               model: device.device_type || 'HelmetPro Standard',
-              firmware_version: '1.0.0',
-              hardware_version: '1.0.0',
               status: device.device_status.toLowerCase(),
               location: null,
               last_connection: device.updated_at,
               registered_at: device.created_at,
+              firmware_version_installed: device.firmware_version_installed || '1.0.0',
             };
 
             return {
@@ -374,16 +359,16 @@ export async function verifyHardwareAuth(req: NextRequest) {
 
               if (!deviceError && device) {
                 // Convert to expected device format
-                const formattedDevice = {
+                const formattedDevice: IDevice = {
                   id: device.device_id.toString(),
                   machine_id: device.device_reg_id || 'unknown',
                   model: device.device_type || 'HelmetPro Standard',
-                  firmware_version: '1.0.0',
-                  hardware_version: '1.0.0',
                   status: device.device_status.toLowerCase(),
                   location: null,
                   last_connection: device.updated_at,
                   registered_at: device.created_at,
+                  firmware_version_installed:
+                    device.firmware_version_installed || '1.0.0',
                 };
 
                 return {
@@ -398,19 +383,6 @@ export async function verifyHardwareAuth(req: NextRequest) {
             console.error('Failed to parse device info:', e);
           }
         }
-      }
-
-      // Special case for admins in development mode with fallback tokens
-      if (false && isDev && userData.email === 'admin@helmetprosolutions.com') {
-        console.log(
-          'Using simulated device for admin user in development mode (fallback token)'
-        );
-        return {
-          authenticated: true,
-          response: null,
-          device: adminDeviceSample,
-          user: userData,
-        };
       }
 
       return {

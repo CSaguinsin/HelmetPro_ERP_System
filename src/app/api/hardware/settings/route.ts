@@ -25,10 +25,20 @@ interface DeviceSettings {
   timezone: string;
 }
 
-interface IHardwareAuthResult {
-  authenticated: boolean;
-  response?: Response;
-  device: IJwtPayload;
+export interface IDevice {
+  id: string;
+  machine_id: string;
+  model: string;
+  status: 'active' | 'inactive' | string; // add other status options if needed
+  location: string | null;
+  last_connection?: string; // or Date, depending on how you handle it
+  registered_at: string; // ISO timestamp
+  firmware_version_installed: string;
+}
+
+interface IGetSettingsResponse {
+  settings: DeviceSettings;
+  device: IDevice | null; // Include device info in the response
 }
 
 /**
@@ -83,32 +93,11 @@ export async function GET(req: NextRequest): Promise<Response> {
 
   const result = await verifyHardwareAuth(req);
 
+  console.log('Auth result:', result);
+
   if (!result) {
     return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
   }
-
-  // if (!result?.authenticated) {
-  //   return (
-  //     NextResponse.json({ error: 'Authentication failed' }, { status: 401 })
-  //   );
-  // }
-
-  // Check for deviceId query parameter - for admin UI
-  // const url = new URL(req.url);
-  // const deviceIdParam = url.searchParams.get('deviceId');
-
-  // Determine which device ID to use (from query for admin UI, or from auth for device itself)
-
-  // // If deviceId param is provided, use it instead - but only if admin role
-  // if (deviceIdParam) {
-  //   // Check if user is admin (would need to add an isAdmin check to verifyHardwareAuth)
-  //   // For now, we'll allow overriding based on provided deviceId
-  //   deviceId = parseInt(deviceIdParam, 10);
-
-  //   if (isNaN(deviceId)) {
-  //     return NextResponse.json({ error: "Invalid device ID provided" }, { status: 400 });
-  //   }
-  // }
 
   try {
     // Get device settings from database
@@ -162,23 +151,37 @@ export async function GET(req: NextRequest): Promise<Response> {
       paymentMethods = [PAYMENT_METHODS.COIN_SLOT]; // Default if not set
     }
 
+    const defaultDevice = {
+      id: result.device?.id || '',
+      machine_id: result.device?.machine_id || '',
+      model: result.device?.model || 'Unknown',
+      status: result.device?.status || 'active',
+      location: result.device?.location || null,
+      last_connection: result.device?.last_connection || null,
+      registered_at: result.device?.registered_at || new Date().toISOString(),
+      firmware_version_installed: '1.0.0',
+    };
+
     // Return configured settings
-    const deviceSettings: DeviceSettings = {
-      required_payment_amount: settings.required_payment_amount,
-      payment_methods: paymentMethods,
-      machine_id: settings.machine_id || result.device?.machine_id || '',
-      smoke_duration: settings.smoke_duration,
-      smoke_repeat_every: settings.smoke_repeat_every,
-      uv_light_duration: settings.uv_light_duration,
-      blower_drying_time: settings.blower_drying_time,
-      blower_drying_repeat_every: settings.blower_drying_repeat_every,
-      open_door_after: settings.open_door_after,
-      timezone: settings.timezone || 'Asia/Manila',
+    const deviceSettings: IGetSettingsResponse = {
+      settings: {
+        required_payment_amount: settings.required_payment_amount,
+        payment_methods: paymentMethods,
+        machine_id: settings.machine_id || result.device?.machine_id || '',
+        smoke_duration: settings.smoke_duration,
+        smoke_repeat_every: settings.smoke_repeat_every,
+        uv_light_duration: settings.uv_light_duration,
+        blower_drying_time: settings.blower_drying_time,
+        blower_drying_repeat_every: settings.blower_drying_repeat_every,
+        open_door_after: settings.open_door_after,
+        timezone: settings.timezone || 'Asia/Manila',
+      },
+      device: result.device,
     };
 
     return NextResponse.json(
       {
-        settings: deviceSettings,
+        ...deviceSettings,
       },
       { status: 200 }
     );
