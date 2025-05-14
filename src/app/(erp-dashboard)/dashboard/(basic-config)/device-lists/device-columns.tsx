@@ -1,23 +1,28 @@
-"use client";
+'use client';
 
-import { ColumnDef } from "@tanstack/react-table";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Button } from "@/components/ui/button";
-import { 
-  ArrowUpDown, 
-  MoreHorizontal, 
-  Laptop, 
-  Clock, 
-  Check, 
+import { ColumnDef } from '@tanstack/react-table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import {
+  ArrowUpDown,
+  MoreHorizontal,
+  Laptop,
+  Clock,
+  Check,
   AlertCircle,
   Settings,
   ExternalLink,
   Trash2,
   Copy,
-  Eye
-} from "lucide-react";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { Badge } from "@/components/ui/badge";
+  Eye,
+} from 'lucide-react';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,16 +30,16 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { AppRouterInstance } from "next/dist/shared/lib/app-router-context.shared-runtime";
-import { supabase } from "@/lib/supabase";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+} from '@/components/ui/dropdown-menu';
+import { AppRouterInstance } from 'next/dist/shared/lib/app-router-context.shared-runtime';
+import { supabase } from '@/lib/supabase';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 
 // Define the correct type for the device_list data
 export interface DeviceList {
   device_id: number;
   device_name: string;
-  device_status: "Disable" | "Enable" | "Maintenance"; // Enum values
+  device_status: 'Disable' | 'Enable' | 'Maintenance'; // Enum values
   device_type: string;
   status: string; // Online or Offline
   protocol_type: string;
@@ -45,11 +50,11 @@ export interface DeviceList {
 }
 
 export const getColumns = (
-  router: AppRouterInstance, 
+  router: AppRouterInstance,
   refreshData: () => Promise<void>
 ): ColumnDef<DeviceList>[] => [
   {
-    id: "select",
+    id: 'select',
     header: ({ table }) => (
       <Checkbox
         checked={table.getIsAllPageRowsSelected()}
@@ -70,12 +75,12 @@ export const getColumns = (
     enableHiding: false,
   },
   {
-    accessorKey: "device_id",
+    accessorKey: 'device_id',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         ID
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
@@ -83,19 +88,19 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <div className="font-medium text-sm text-gray-900 dark:text-gray-100">
-        #{row.getValue("device_id")}
+        #{row.getValue('device_id')}
       </div>
     ),
   },
   {
-    accessorKey: "device_name",
+    accessorKey: 'device_name',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Device Name
+        Machine Name
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
       </Button>
     ),
@@ -106,75 +111,103 @@ export const getColumns = (
             <Laptop className="h-4 w-4" />
           </AvatarFallback>
         </Avatar>
-        <div className="font-medium">{row.getValue("device_name")}</div>
+        <div className="font-medium">{row.getValue('device_name')}</div>
       </div>
     ),
   },
+  // {
+  //   accessorKey: 'device_status',
+  //   header: ({ column }) => (
+  //     <Button
+  //       variant="ghost"
+  //       className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
+  //       onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
+  //     >
+  //       Device Status
+  //       <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
+  //     </Button>
+  //   ),
+  //   cell: ({ row }) => {
+  //     const status = row.getValue('device_status') as string | undefined;
+
+  //     if (!status) {
+  //       return <Badge variant="secondary">Unknown</Badge>; // Handle undefined case
+  //     }
+
+  //     const getStatusProps = () => {
+  //       switch (status) {
+  //         case 'Enable':
+  //           return {
+  //             variant: 'outline',
+  //             className:
+  //               'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
+  //             icon: Check,
+  //           };
+  //         case 'Disable':
+  //           return {
+  //             variant: 'outline',
+  //             className:
+  //               'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
+  //             icon: AlertCircle,
+  //           };
+  //         case 'Maintenance':
+  //           return {
+  //             variant: 'outline',
+  //             className:
+  //               'bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800',
+  //             icon: Settings,
+  //           };
+  //         default:
+  //           return {
+  //             variant: 'outline',
+  //             className:
+  //               'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
+  //             icon: Clock,
+  //           };
+  //       }
+  //     };
+
+  //     const { className, icon: Icon } = getStatusProps();
+
+  //     return (
+  //       <Badge
+  //         variant="outline"
+  //         className={`flex items-center gap-1 px-2 py-1 ${className}`}
+  //       >
+  //         <Icon className="h-3 w-3" />
+  //         <span>{status}</span>
+  //       </Badge>
+  //     );
+  //   },
+  // },
   {
-    accessorKey: "device_status",
+    accessorKey: 'device_reg_id',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
-        Device Status
+        Machine ID
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
       </Button>
     ),
     cell: ({ row }) => {
-      const status = row.getValue("device_status") as string | undefined;
-  
-      if (!status) {
-        return <Badge variant="secondary">Unknown</Badge>; // Handle undefined case
-      }
-  
-      const getStatusProps = () => {
-        switch (status) {
-          case "Enable":
-            return { 
-              variant: "outline", 
-              className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
-              icon: Check
-            };
-          case "Disable":
-            return { 
-              variant: "outline", 
-              className: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
-              icon: AlertCircle
-            };
-          case "Maintenance":
-            return { 
-              variant: "outline", 
-              className: "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-900/20 dark:text-amber-400 dark:border-amber-800",
-              icon: Settings
-            };
-          default:
-            return { 
-              variant: "outline", 
-              className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
-              icon: Clock
-            };
-        }
-      };
-  
-      const { className, icon: Icon } = getStatusProps();
-  
+      const value = row.getValue('device_reg_id') as string;
       return (
-        <Badge variant="outline" className={`flex items-center gap-1 px-2 py-1 ${className}`}>
-          <Icon className="h-3 w-3" />
-          <span>{status}</span>
-        </Badge>
+        <div className="font-bold text-sm text-gray-600 dark:text-gray-300">
+          {value || '—'}
+        </div>
       );
     },
   },
   {
-    accessorKey: "device_type",
+    accessorKey: 'device_type',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Device Type
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
@@ -182,52 +215,58 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <div className="text-sm text-gray-600 dark:text-gray-300">
-        {row.getValue("device_type") || "—"}
+        {String(row.getValue('device_type') || '—').toUpperCase()}
       </div>
     ),
   },
   {
-    accessorKey: "status",
+    accessorKey: 'status',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Status
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
       </Button>
     ),
     cell: ({ row }) => {
-      const status = row.getValue("status") as string;
-      
+      const status = row.getValue('status') as string;
+
       const getStatusProps = () => {
         switch (status) {
-          case "Online":
-            return { 
-              variant: "outline", 
-              className: "bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800",
-              icon: Check
+          case 'Online':
+            return {
+              variant: 'outline',
+              className:
+                'bg-green-50 text-green-700 border-green-200 dark:bg-green-900/20 dark:text-green-400 dark:border-green-800',
+              icon: Check,
             };
-          case "Offline":
-            return { 
-              variant: "outline", 
-              className: "bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800",
-              icon: AlertCircle
+          case 'Offline':
+            return {
+              variant: 'outline',
+              className:
+                'bg-red-50 text-red-700 border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-800',
+              icon: AlertCircle,
             };
           default:
-            return { 
-              variant: "outline", 
-              className: "bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800",
-              icon: Clock
+            return {
+              variant: 'outline',
+              className:
+                'bg-gray-50 text-gray-700 border-gray-200 dark:bg-gray-900/20 dark:text-gray-400 dark:border-gray-800',
+              icon: Clock,
             };
         }
       };
-  
+
       const { className, icon: Icon } = getStatusProps();
-  
+
       return (
-        <Badge variant="outline" className={`flex items-center gap-1 px-2 py-1 ${className}`}>
+        <Badge
+          variant="outline"
+          className={`flex items-center gap-1 px-2 py-1 ${className}`}
+        >
           <Icon className="h-3 w-3" />
           <span>{status}</span>
         </Badge>
@@ -235,12 +274,12 @@ export const getColumns = (
     },
   },
   {
-    accessorKey: "protocol_type",
+    accessorKey: 'protocol_type',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Protocol
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
@@ -248,38 +287,47 @@ export const getColumns = (
     ),
     cell: ({ row }) => (
       <div className="text-sm text-gray-600 dark:text-gray-300">
-        {row.getValue("protocol_type") || "—"}
+        {row.getValue('protocol_type') || '—'}
       </div>
     ),
   },
   {
-    accessorKey: "maturity_time",
+    accessorKey: 'maturity_time',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Last Updated
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
       </Button>
     ),
     cell: ({ row }) => {
-      const date = new Date(row.getValue("maturity_time"));
+      const date = new Date(row.getValue('maturity_time'));
       const now = new Date();
-      const diffInDays = Math.floor((now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24));
-      
+      const diffInDays = Math.floor(
+        (now.getTime() - date.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
       let formattedDate;
       if (diffInDays === 0) {
-        formattedDate = "Today, " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        formattedDate =
+          'Today, ' + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       } else if (diffInDays === 1) {
-        formattedDate = "Yesterday, " + date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        formattedDate =
+          'Yesterday, ' +
+          date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       } else if (diffInDays < 7) {
         formattedDate = `${diffInDays} days ago`;
       } else {
-        formattedDate = date.toLocaleDateString([], { year: 'numeric', month: 'short', day: 'numeric' });
+        formattedDate = date.toLocaleDateString([], {
+          year: 'numeric',
+          month: 'short',
+          day: 'numeric',
+        });
       }
-      
+
       return (
         <TooltipProvider>
           <Tooltip>
@@ -297,77 +345,82 @@ export const getColumns = (
     },
   },
   {
-    accessorKey: "customer_name",
+    accessorKey: 'customer_name',
     header: ({ column }) => (
-      <Button 
-        variant="ghost" 
+      <Button
+        variant="ghost"
         className="pl-0 font-medium hover:bg-transparent hover:text-blue-600 dark:hover:text-blue-400"
-        onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+        onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
       >
         Customer
         <ArrowUpDown className="ml-1 h-3.5 w-3.5 text-gray-400" />
       </Button>
     ),
     cell: ({ row }) => {
-      const value = row.getValue("customer_name") as string;
+      const value = row.getValue('customer_name') as string;
       return (
-        <div className="text-sm text-gray-600 dark:text-gray-300">
-          {value || "—"}
-        </div>
+        <div className="text-sm text-gray-600 dark:text-gray-300">{value || '—'}</div>
       );
     },
   },
   {
-    id: "actions",
+    id: 'actions',
     cell: ({ row }) => {
       const device = row.original;
 
       const handleDelete = async () => {
-        if (confirm(`Are you sure you want to delete device ${device.device_name || device.device_id}?`)) {
+        if (
+          confirm(
+            `Are you sure you want to delete device ${device.device_name || device.device_id}?`
+          )
+        ) {
           try {
             // Delete from device_list
             const { error } = await supabase
-              .from("device_list")
+              .from('device_list')
               .delete()
-              .eq("device_id", device.device_id);
-              
+              .eq('device_id', device.device_id);
+
             if (error) {
-              console.error("Failed to delete device:", error);
+              console.error('Failed to delete device:', error);
               alert(`Error deleting device: ${error.message}`);
               return;
             }
-            
+
             // Try to also delete from device_settings if it exists
             try {
               await supabase
-                .from("device_settings")
+                .from('device_settings')
                 .delete()
-                .eq("device_id", device.device_id);
+                .eq('device_id', device.device_id);
             } catch {
               // It's ok if this fails - the settings might not exist
-              console.log("Note: Device settings deletion was skipped or failed");
+              console.log('Note: Device settings deletion was skipped or failed');
             }
-            
+
             // Remove from localStorage if this was the active device
-            if (localStorage.getItem("device_id") === device.device_id.toString()) {
-              localStorage.removeItem("device_id");
+            if (localStorage.getItem('device_id') === device.device_id.toString()) {
+              localStorage.removeItem('device_id');
             }
-            
+
             // Update stored devices list in localStorage
-            const storedDevices = JSON.parse(localStorage.getItem("user_devices") || "[]");
-            const updatedDevices = storedDevices.filter(
-              (d: { device_id: number | string }) => d.device_id?.toString() !== device.device_id?.toString()
+            const storedDevices = JSON.parse(
+              localStorage.getItem('user_devices') || '[]'
             );
-            localStorage.setItem("user_devices", JSON.stringify(updatedDevices));
-            
+            const updatedDevices = storedDevices.filter(
+              (d: { device_id: number | string }) =>
+                d.device_id?.toString() !== device.device_id?.toString()
+            );
+            localStorage.setItem('user_devices', JSON.stringify(updatedDevices));
+
             // Refresh the data to update the UI
             await refreshData();
-            
+
             // Show success message
-            alert("Device deleted successfully");
+            alert('Device deleted successfully');
           } catch (error) {
-            console.error("Error deleting device:", error);
-            alert("An error occurred while deleting the device");
+            console.error('Error deleting device:', error);
+            alert('An error occurred while deleting the device');
           }
         }
       };
@@ -383,7 +436,7 @@ export const getColumns = (
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-[160px]">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={() => navigator.clipboard.writeText(device.device_id.toString())}
                 className="flex items-center gap-2 cursor-pointer"
               >
@@ -391,21 +444,23 @@ export const getColumns = (
                 <span>Copy ID</span>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem 
+              {/* <DropdownMenuItem 
                 onClick={() => router.push(`/dashboard/device-lists/${device.device_id}`)}
                 className="flex items-center gap-2 cursor-pointer"
               >
                 <Eye className="h-4 w-4" />
                 <span>View Details</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem 
-                onClick={() => router.push(`/dashboard/device-settings/${device.device_id}`)}
+              </DropdownMenuItem> */}
+              <DropdownMenuItem
+                onClick={() =>
+                  router.push(`/dashboard/device-settings/${device.device_id}`)
+                }
                 className="flex items-center gap-2 cursor-pointer"
               >
                 <Settings className="h-4 w-4" />
                 <span>Edit Settings</span>
               </DropdownMenuItem>
-              <DropdownMenuItem 
+              <DropdownMenuItem
                 onClick={handleDelete}
                 className="flex items-center gap-2 cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
               >

@@ -1,81 +1,85 @@
-"use client"
+'use client';
 
-import Link from "next/link"
-import { usePathname, useRouter } from "next/navigation"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
-import { LayoutDashboard, Settings, ChevronDown, LogOut, Cog } from "lucide-react"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import Image from "next/image"
-import { useState } from "react"
-import { supabase } from "@/lib/supabase"
-import type React from "react"
+import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { LayoutDashboard, Settings, ChevronDown, LogOut, Cog } from 'lucide-react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import Image from 'next/image';
+import { useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import type React from 'react';
 
 interface SubItem {
-  title: string
-  href: string
+  title: string;
+  href: string;
 }
 
 interface MenuItem {
-  title: string
-  icon: React.ElementType
-  href?: string
-  subItems?: SubItem[]
+  title: string;
+  icon: React.ElementType;
+  href?: string;
+  subItems?: SubItem[];
 }
 
 interface OpenStates {
-  [key: string]: boolean
+  [key: string]: boolean;
 }
 
 const menuItems: MenuItem[] = [
   {
-    title: "Home",
+    title: 'Home',
     icon: LayoutDashboard,
-    href: "/dashboard",
+    href: '/dashboard',
   },
   {
-    title: "Basic Configuration",
+    title: 'Basic Configuration',
     icon: Settings,
     subItems: [
-      { title: "Device Lists", href: "/dashboard/device-lists" },
-      { title: "Add or Edit Machine Images", href: "/dashboard/machine-images" },
-      { title: "Vendo Settings", href: "/dashboard/device-settings" },
+      { title: 'Device List', href: '/dashboard/device-lists' },
+      { title: 'Add or Edit Machine Images', href: '/dashboard/machine-images' },
+      { title: 'Vendo Settings', href: '/dashboard/device-settings' },
     ],
   },
   {
-    title: "System Management",
+    title: 'System Management',
     icon: Cog,
     subItems: [
-      { title: "Firmware Management", href: "/dashboard/firmware" },
-      { title: "Sales Monitoring", href: "/dashboard/sales-monitoring" },
-      { title: "Machine Status & Notifications", href: "/dashboard/machine-status" },
+      { title: 'Firmware Management', href: '/dashboard/firmware' },
+      { title: 'Sales Monitoring', href: '/dashboard/sales-monitoring' },
+      { title: 'Machine Status & Notifications', href: '/dashboard/machine-status' },
     ],
   },
-]
+];
 
 export default function SidebarComponent() {
-  const router = useRouter()
-  const pathname = usePathname()
+  const router = useRouter();
+  const pathname = usePathname();
 
   const [openStates, setOpenStates] = useState<OpenStates>(() =>
     menuItems.reduce((acc: OpenStates, item) => {
-      if (item.subItems) acc[item.title] = true
-      return acc
-    }, {}),
-  )
+      if (item.subItems) acc[item.title] = true;
+      return acc;
+    }, {})
+  );
 
   const toggleMenu = (title: string) => {
-    setOpenStates((prev) => ({ ...prev, [title]: !prev[title] }))
-  }
+    setOpenStates((prev) => ({ ...prev, [title]: !prev[title] }));
+  };
 
   const handleSignOut = async () => {
-    const { error } = await supabase.auth.signOut()
+    const { error } = await supabase.auth.signOut();
     if (!error) {
-      router.push("/")
+      router.push('/');
     } else {
-      console.error("Sign out error:", error.message)
+      console.error('Sign out error:', error.message);
     }
-  }
+  };
 
   return (
     <div className="pb-6 min-h-screen flex flex-col justify-between bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 shadow-lg">
@@ -107,8 +111,8 @@ export default function SidebarComponent() {
                       </div>
                       <ChevronDown
                         className={cn(
-                          "h-4 w-4 transition-transform duration-200",
-                          openStates[item.title] ? "rotate-180" : "",
+                          'h-4 w-4 transition-transform duration-200',
+                          openStates[item.title] ? 'rotate-180' : ''
                         )}
                       />
                     </Button>
@@ -119,10 +123,10 @@ export default function SidebarComponent() {
                         key={subIndex}
                         href={subItem.href}
                         className={cn(
-                          "block py-2 px-3 rounded-md text-sm transition-colors duration-200",
+                          'block py-2 px-3 rounded-md text-sm transition-colors duration-200',
                           pathname === subItem.href
-                            ? "bg-primary text-primary-foreground"
-                            : "hover:bg-gray-100 dark:hover:bg-gray-700",
+                            ? 'bg-primary text-primary-foreground'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                         )}
                       >
                         {subItem.title}
@@ -135,17 +139,17 @@ export default function SidebarComponent() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "w-full justify-start transition-colors duration-200",
+                      'w-full justify-start transition-colors duration-200',
                       pathname === item.href
-                        ? "bg-primary text-primary-foreground"
-                        : "hover:bg-gray-100 dark:hover:bg-gray-700",
+                        ? 'bg-primary text-primary-foreground'
+                        : 'hover:bg-gray-100 dark:hover:bg-gray-700'
                     )}
                   >
                     <item.icon className="mr-3 h-5 w-5" />
                     {item.title}
                   </Button>
                 </Link>
-              ),
+              )
             )}
           </div>
         </div>
@@ -162,6 +166,5 @@ export default function SidebarComponent() {
         </Button>
       </div>
     </div>
-  )
+  );
 }
-

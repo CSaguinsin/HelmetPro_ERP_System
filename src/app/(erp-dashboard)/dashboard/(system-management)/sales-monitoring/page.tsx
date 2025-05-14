@@ -1,15 +1,21 @@
-"use client";
+'use client';
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useAuth } from "@/lib/auth-context";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import Sidebar from "@/app/components/Sidebar";
-import { supabase } from "@/lib/supabase";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Plus } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/lib/auth-context';
+import { Button } from '@/components/ui/button';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import Sidebar from '@/app/components/Sidebar';
+import { supabase } from '@/lib/supabase';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Menu, Plus } from 'lucide-react';
 
 interface Device {
   device_id: string;
@@ -29,7 +35,7 @@ export default function SalesMonitoringPage() {
   // Check authentication
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push("/");
+      router.push('/');
     }
   }, [authLoading, isAuthenticated, router]);
 
@@ -37,27 +43,27 @@ export default function SalesMonitoringPage() {
   useEffect(() => {
     async function loadDevices() {
       if (!isAuthenticated || !user?.user_client_id) return;
-      
+
       try {
         // Fetch devices from Supabase for the current user only
         const { data: deviceData, error: deviceError } = await supabase
-          .from("device_list")
-          .select("device_id, device_name, device_reg_id, device_status, last_updated")
-          .eq("user_client_id", user.user_client_id)
-          .order("device_name");
-        
+          .from('device_list')
+          .select('device_id, device_name, device_reg_id, device_status, last_updated')
+          .eq('user_client_id', user.user_client_id)
+          .order('device_name');
+
         if (deviceError) {
-          console.error("Error fetching devices:", deviceError);
-          setError("Failed to fetch devices");
+          console.error('Error fetching devices:', deviceError);
+          setError('Failed to fetch devices');
           setLoading(false);
           return;
         }
-        
+
         if (deviceData) {
           setDevices(deviceData);
         }
       } catch (err) {
-        setError("Failed to load devices");
+        setError('Failed to load devices');
         console.error(err);
       } finally {
         setLoading(false);
@@ -76,7 +82,7 @@ export default function SalesMonitoringPage() {
 
   // Format timestamp to readable date
   const formatDate = (timestamp?: string) => {
-    if (!timestamp) return "Never";
+    if (!timestamp) return 'Never';
     return new Date(timestamp).toLocaleString();
   };
 
@@ -109,12 +115,18 @@ export default function SalesMonitoringPage() {
         <div className="container mx-auto py-6 px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">Sales Monitoring</h1>
+            <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Sales Monitoring
+            </h1>
             <div className="flex items-center space-x-4">
               {/* Mobile Sidebar Toggle */}
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="lg:hidden hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                  >
                     <Menu className="h-5 w-5" />
                     <span className="sr-only">Toggle sidebar</span>
                   </Button>
@@ -123,7 +135,7 @@ export default function SalesMonitoringPage() {
                   <Sidebar />
                 </SheetContent>
               </Sheet>
-              
+
               {/* Add Device Button */}
               <Button
                 className="bg-blue-600 hover:bg-blue-700"
@@ -133,7 +145,7 @@ export default function SalesMonitoringPage() {
               </Button>
             </div>
           </div>
-          
+
           {/* Description */}
           <p className="text-gray-600 dark:text-gray-300 mb-6">
             Select a device to view and send transaction data.
@@ -143,7 +155,7 @@ export default function SalesMonitoringPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {devices.length > 0 ? (
               devices.map((device) => (
-                <Card 
+                <Card
                   key={device.device_id}
                   className="overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
                   onClick={() => handleDeviceClick(device.device_id)}
@@ -151,12 +163,12 @@ export default function SalesMonitoringPage() {
                   <CardHeader className="bg-gray-50 dark:bg-gray-800">
                     <div className="flex justify-between items-start">
                       <CardTitle className="text-xl">{device.device_name}</CardTitle>
-                      <Badge 
+                      <Badge
                         className={
-                          device.device_status === 'active' 
-                            ? 'bg-green-500' 
-                            : device.device_status === 'error' 
-                              ? 'bg-red-500' 
+                          device.device_status === 'active'
+                            ? 'bg-green-500'
+                            : device.device_status === 'error'
+                              ? 'bg-red-500'
                               : 'bg-gray-500'
                         }
                       >
@@ -169,7 +181,7 @@ export default function SalesMonitoringPage() {
                     <div className="text-sm text-gray-500">
                       <p>Last Activity: {formatDate(device.last_updated)}</p>
                     </div>
-                    <Button 
+                    <Button
                       variant="outline"
                       className="w-full mt-4"
                       onClick={(e) => {
@@ -185,9 +197,7 @@ export default function SalesMonitoringPage() {
             ) : (
               <div className="col-span-full text-center py-10 text-gray-500">
                 <p className="mb-4">No devices found</p>
-                <Button
-                  onClick={() => router.push('/dashboard/device-lists')}
-                >
+                <Button onClick={() => router.push('/dashboard/device-lists')}>
                   Add a Device
                 </Button>
               </div>
@@ -195,7 +205,7 @@ export default function SalesMonitoringPage() {
           </div>
 
           {/* API Documentation */}
-          <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          {/* <div className="mt-8 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
             <h2 className="text-xl font-semibold mb-4">API Endpoints Documentation</h2>
             <div className="space-y-3">
               <div>
@@ -218,9 +228,9 @@ export default function SalesMonitoringPage() {
                 </ul>
               </div>
             </div>
-          </div>
+          </div> */}
         </div>
       </main>
     </div>
   );
-} 
+}

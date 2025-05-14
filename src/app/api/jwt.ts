@@ -19,6 +19,7 @@ export interface IJwtPayload {
  * @returns signed JWT string
  */
 export function signInJWT(payload: object): string {
+  // @ts-ignore
   return jwt.sign(payload, JWT_SECRET);
 }
 
@@ -29,7 +30,9 @@ export function signInJWT(payload: object): string {
  */
 export function getUser(token: string): IJwtPayload | null {
   try {
+    // @ts-ignore
     const decoded = jwt.verify(token, JWT_SECRET);
+    // @ts-ignore
     return decoded as IJwtPayload;
   } catch (err) {
     console.error('Invalid or expired token:', err);

@@ -1,30 +1,31 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { 
-  Settings, 
-  Search, 
-  Sliders, 
-  AlertCircle, 
-  Check, 
-  Wifi, 
-  WifiOff 
-} from "lucide-react";
-import Sidebar from "../../../components/Sidebar";
-import { useAuth } from "@/lib/auth-context";
-import { Input } from "@/components/ui/input";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import {
+  Settings,
+  Search,
+  Sliders,
+  AlertCircle,
+  Check,
+  Wifi,
+  WifiOff,
+} from 'lucide-react';
+import Sidebar from '../../../components/Sidebar';
+import { useAuth } from '@/lib/auth-context';
+import { Input } from '@/components/ui/input';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type Device = {
   device_id: string;
   device_name: string;
   device_status: string;
   protocol_type: string;
+  device_reg_id: string;
 };
 
 export default function DeviceSettingsPage() {
@@ -33,11 +34,11 @@ export default function DeviceSettingsPage() {
   const [devices, setDevices] = useState<Device[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
-      router.push("/");
+      router.push('/');
       return;
     }
 
@@ -49,18 +50,21 @@ export default function DeviceSettingsPage() {
         setError(null);
 
         const { data, error } = await supabase
-          .from("device_list")
-          .select(`
+          .from('device_list')
+          .select(
+            `
             device_id, 
             device_name, 
-            device_status, 
+            device_status,
+            device_reg_id, 
             protocol_type
-          `)
-          .eq("user_client_id", user.user_client_id);
+          `
+          )
+          .eq('user_client_id', user.user_client_id);
 
         if (error) {
-          console.error("Error fetching devices:", error);
-          setError("Failed to load devices. Please try again later.");
+          console.error('Error fetching devices:', error);
+          setError('Failed to load devices. Please try again later.');
           setLoading(false);
           return;
         }
@@ -75,7 +79,7 @@ export default function DeviceSettingsPage() {
         setDevices(data || []);
       } catch (err) {
         console.error('Error fetching devices:', err);
-        setError("Failed to load devices. Please try again later.");
+        setError('Failed to load devices. Please try again later.');
       } finally {
         setLoading(false);
       }
@@ -85,14 +89,15 @@ export default function DeviceSettingsPage() {
   }, [user, authLoading, isAuthenticated, router]);
 
   // Filter devices based on search query
-  const filteredDevices = devices.filter(device => 
-    device.device_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    device.device_id.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDevices = devices.filter(
+    (device) =>
+      device.device_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      device.device_id.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   // Function to render status badge
   const renderStatusBadge = (status: string) => {
-    switch(status.toLowerCase()) {
+    switch (status.toLowerCase()) {
       case 'active':
       case 'online':
         return (
@@ -120,7 +125,11 @@ export default function DeviceSettingsPage() {
   const renderProtocolBadge = (protocol: string) => {
     return (
       <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-200 border border-blue-200">
-        {protocol === 'wifi' ? <Wifi className="w-3 h-3 mr-1" /> : <WifiOff className="w-3 h-3 mr-1" />}
+        {protocol === 'wifi' ? (
+          <Wifi className="w-3 h-3 mr-1" />
+        ) : (
+          <WifiOff className="w-3 h-3 mr-1" />
+        )}
         {protocol}
       </Badge>
     );
@@ -142,10 +151,10 @@ export default function DeviceSettingsPage() {
               <div className="flex items-center justify-between">
                 <Skeleton className="h-8 w-64" />
               </div>
-              
+
               {/* Search Skeleton */}
               <Skeleton className="h-10 w-full max-w-md" />
-              
+
               {/* Devices Card Skeleton */}
               <Card className="bg-white dark:bg-gray-800 shadow-lg">
                 <CardHeader>
@@ -188,7 +197,7 @@ export default function DeviceSettingsPage() {
               {error}
             </div>
           )}
-          
+
           <div className="space-y-6">
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -214,7 +223,8 @@ export default function DeviceSettingsPage() {
                   <Settings className="h-5 w-5 mr-2 text-primary" />
                   Your Devices
                   <Badge className="ml-3 bg-primary/10 text-primary hover:bg-primary/20 border-0">
-                    {filteredDevices.length} {filteredDevices.length === 1 ? 'Device' : 'Devices'}
+                    {filteredDevices.length}{' '}
+                    {filteredDevices.length === 1 ? 'Device' : 'Devices'}
                   </Badge>
                 </CardTitle>
               </CardHeader>
@@ -225,18 +235,15 @@ export default function DeviceSettingsPage() {
                       <Settings className="h-6 w-6 text-gray-500" />
                     </div>
                     <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
-                      {searchQuery ? "No matching devices found" : "No devices found"}
+                      {searchQuery ? 'No matching devices found' : 'No devices found'}
                     </h3>
                     <p className="text-gray-500 max-w-md mx-auto mb-6">
-                      {searchQuery 
-                        ? "Try adjusting your search query or clear the search to see all devices."
-                        : "Please add devices to your account to configure their settings."}
+                      {searchQuery
+                        ? 'Try adjusting your search query or clear the search to see all devices.'
+                        : 'Please add devices to your account to configure their settings.'}
                     </p>
                     {searchQuery && (
-                      <Button 
-                        variant="outline"
-                        onClick={() => setSearchQuery("")}
-                      >
+                      <Button variant="outline" onClick={() => setSearchQuery('')}>
                         Clear Search
                       </Button>
                     )}
@@ -244,35 +251,47 @@ export default function DeviceSettingsPage() {
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {filteredDevices.map((device) => (
-                      <Card 
+                      <Card
                         key={device.device_id}
                         className="group overflow-hidden border border-gray-100 dark:border-gray-700 hover:border-primary dark:hover:border-primary transition-all duration-300 hover:shadow-md"
                       >
                         <div className="p-5">
                           <div className="flex items-center justify-between mb-3">
-                            <h3 className="font-medium text-lg group-hover:text-primary transition-colors">{device.device_name}</h3>
+                            <h3 className="font-medium text-lg group-hover:text-primary transition-colors">
+                              {device.device_name}
+                            </h3>
                             <Settings className="h-5 w-5 text-gray-400 group-hover:text-primary transition-colors" />
                           </div>
-                          
+
                           <div className="space-y-2 mb-5">
                             <div className="flex items-center text-sm text-gray-500">
-                              <span className="font-medium text-gray-700 dark:text-gray-300 w-20">ID:</span>
-                              <span className="font-mono">{device.device_id}</span>
+                              <span className="font-medium text-gray-700 dark:text-gray-300 w-20">
+                                ID:
+                              </span>
+                              <span className="font-mono">{device.device_reg_id}</span>
                             </div>
                             <div className="flex items-center text-sm text-gray-500">
-                              <span className="font-medium text-gray-700 dark:text-gray-300 w-20">Status:</span>
+                              <span className="font-medium text-gray-700 dark:text-gray-300 w-20">
+                                Status:
+                              </span>
                               {renderStatusBadge(device.device_status)}
                             </div>
                             <div className="flex items-center text-sm text-gray-500">
-                              <span className="font-medium text-gray-700 dark:text-gray-300 w-20">Protocol:</span>
+                              <span className="font-medium text-gray-700 dark:text-gray-300 w-20">
+                                Protocol:
+                              </span>
                               {renderProtocolBadge(device.protocol_type)}
                             </div>
                           </div>
-                          
-                          <Button 
+
+                          <Button
                             className="w-full group-hover:bg-primary group-hover:text-white transition-colors"
                             variant="outline"
-                            onClick={() => router.push(`/dashboard/device-settings/${device.device_id}`)}
+                            onClick={() =>
+                              router.push(
+                                `/dashboard/device-settings/${device.device_id}`
+                              )
+                            }
                           >
                             Configure Settings
                           </Button>
@@ -288,4 +307,4 @@ export default function DeviceSettingsPage() {
       </div>
     </div>
   );
-} 
+}

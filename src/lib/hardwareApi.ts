@@ -163,6 +163,7 @@ export const getDeviceDetails = async (
 export const getAssets = async (): Promise<ApiResponse<MediaFile[]>> => {
   try {
     const deviceInfoStr = localStorage.getItem('device_info');
+
     const endpoint = deviceInfoStr
       ? `assets?deviceId=${JSON.parse(deviceInfoStr).device_id}`
       : 'assets';
@@ -246,6 +247,8 @@ export const uploadAsset = async (
       headers,
       body: formData,
     });
+
+    console.log('Upload response:', response);
 
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || 'Upload failed');

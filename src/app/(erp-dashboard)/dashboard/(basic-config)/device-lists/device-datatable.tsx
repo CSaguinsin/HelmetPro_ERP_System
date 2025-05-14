@@ -1,45 +1,66 @@
-"use client"
+'use client';
 
-import { ColumnDef, flexRender, getCoreRowModel, useReactTable, getPaginationRowModel, getSortedRowModel, getFilteredRowModel } from "@tanstack/react-table"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { 
-  ArrowUpDown, 
-  ChevronLeft, 
-  ChevronRight, 
-  ChevronsLeft, 
+import {
+  ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getPaginationRowModel,
+  getSortedRowModel,
+  getFilteredRowModel,
+} from '@tanstack/react-table';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import {
+  ArrowUpDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
   ChevronsRight,
   Laptop,
   Check,
   AlertCircle,
-  Clock
-} from "lucide-react"
-import { useState } from "react"
-import { Badge } from "@/components/ui/badge"
-import { Input } from "@/components/ui/input"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+  Clock,
+} from 'lucide-react';
+import { useState } from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 // Define the Device type
 interface Device {
-  id: string
-  name: string
-  status: "online" | "offline" | "maintenance"
-  lastUpdated: string
-  type: string
-  location: string
+  id: string;
+  name: string;
+  status: 'online' | 'offline' | 'maintenance';
+  lastUpdated: string;
+  type: string;
+  location: string;
 }
 
 // Props interface for the DataTable
 interface DataTableProps<TData, TValue> {
-  columns: ColumnDef<TData, TValue>[]
-  data: TData[]
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
 }
 
 // Column definitions
 export const columns: ColumnDef<Device>[] = [
   {
-    id: "select",
+    id: 'select',
     header: ({ table }) => (
       <Checkbox
         checked={table.getIsAllPageRowsSelected()}
@@ -58,58 +79,62 @@ export const columns: ColumnDef<Device>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "name",
+    accessorKey: 'name',
     header: ({ column }) => {
       return (
         <Button
           variant="ghost"
-          onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
+          onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
         >
           Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: 'status',
+    header: 'Status',
     cell: ({ row }) => {
-      const status = row.getValue("status") as string
+      const status = row.getValue('status') as string;
       return (
-        <div className={`font-medium ${
-          status === "online" ? "text-green-600" :
-          status === "offline" ? "text-red-600" :
-          "text-yellow-600"
-        }`}>
+        <div
+          className={`font-medium ${
+            status === 'online'
+              ? 'text-green-600'
+              : status === 'offline'
+                ? 'text-red-600'
+                : 'text-yellow-600'
+          }`}
+        >
           {status.charAt(0).toUpperCase() + status.slice(1)}
         </div>
-      )
+      );
     },
   },
   {
-    accessorKey: "lastUpdated",
-    header: "Last Updated",
+    accessorKey: 'lastUpdated',
+    header: 'Last Updated',
     cell: ({ row }) => {
-      return new Date(row.getValue("lastUpdated")).toLocaleString()
+      return new Date(row.getValue('lastUpdated')).toLocaleString();
     },
   },
   {
-    accessorKey: "type",
-    header: "Device Type",
+    accessorKey: 'type',
+    header: 'Device Type',
   },
   {
-    accessorKey: "location",
-    header: "Location",
-  }
-]
+    accessorKey: 'location',
+    header: 'Location',
+  },
+];
 
 export function DeviceDataTable<TData, TValue>({
   columns,
   data,
 }: DataTableProps<TData, TValue>) {
-  const [rowSelection, setRowSelection] = useState({})
-  const [pageSize, setPageSize] = useState(10)
+  const [rowSelection, setRowSelection] = useState({});
+  const [pageSize, setPageSize] = useState(10);
 
   const table = useReactTable({
     data,
@@ -127,11 +152,11 @@ export function DeviceDataTable<TData, TValue>({
         pageSize,
       },
     },
-  })
+  });
 
   // Calculate total pages
-  const totalPages = Math.ceil(table.getFilteredRowModel().rows.length / pageSize)
-  const currentPage = table.getState().pagination.pageIndex + 1
+  const totalPages = Math.ceil(table.getFilteredRowModel().rows.length / pageSize);
+  const currentPage = table.getState().pagination.pageIndex + 1;
 
   return (
     <div className="space-y-4">
@@ -140,12 +165,12 @@ export function DeviceDataTable<TData, TValue>({
           <Table>
             <TableHeader className="bg-gray-50 dark:bg-gray-900/50">
               {table.getHeaderGroups().map((headerGroup) => (
-                <TableRow 
+                <TableRow
                   key={headerGroup.id}
                   className="border-b border-gray-200 dark:border-gray-700 hover:bg-transparent"
                 >
                   {headerGroup.headers.map((header) => (
-                    <TableHead 
+                    <TableHead
                       key={header.id}
                       className="py-3 px-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
                     >
@@ -160,7 +185,7 @@ export function DeviceDataTable<TData, TValue>({
                 table.getRowModel().rows.map((row, i) => (
                   <TableRow
                     key={row.id}
-                    data-state={row.getIsSelected() && "selected"}
+                    data-state={row.getIsSelected() && 'selected'}
                     className={`
                       border-b border-gray-100 dark:border-gray-800 
                       hover:bg-gray-50 dark:hover:bg-gray-800/60
@@ -169,10 +194,7 @@ export function DeviceDataTable<TData, TValue>({
                     `}
                   >
                     {row.getVisibleCells().map((cell) => (
-                      <TableCell 
-                        key={cell.id}
-                        className="py-3 px-4"
-                      >
+                      <TableCell key={cell.id} className="py-3 px-4">
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
                       </TableCell>
                     ))}
@@ -180,8 +202,8 @@ export function DeviceDataTable<TData, TValue>({
                 ))
               ) : (
                 <TableRow>
-                  <TableCell 
-                    colSpan={columns.length} 
+                  <TableCell
+                    colSpan={columns.length}
                     className="h-24 text-center text-gray-500 dark:text-gray-400"
                   >
                     No devices found.
@@ -192,7 +214,7 @@ export function DeviceDataTable<TData, TValue>({
           </Table>
         </div>
       </div>
-      
+
       {/* Pagination Controls */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
         <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 order-2 sm:order-1">
@@ -204,15 +226,17 @@ export function DeviceDataTable<TData, TValue>({
               className="mr-2 h-4 w-4"
             />
             <span>
-              {table.getFilteredSelectedRowModel().rows.length} of{" "}
+              {table.getFilteredSelectedRowModel().rows.length} of{' '}
               {table.getFilteredRowModel().rows.length} selected
             </span>
           </div>
         </div>
-        
+
         <div className="flex flex-1 items-center justify-center sm:justify-end gap-1 order-1 sm:order-2">
           <div className="flex items-center mr-4">
-            <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">Rows per page</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 mr-2">
+              Rows per page
+            </span>
             <Select
               value={pageSize.toString()}
               onValueChange={(value) => setPageSize(Number(value))}
@@ -229,7 +253,7 @@ export function DeviceDataTable<TData, TValue>({
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="flex items-center gap-1">
             <Button
               variant="outline"
@@ -249,12 +273,12 @@ export function DeviceDataTable<TData, TValue>({
             >
               <ChevronLeft className="h-4 w-4" />
             </Button>
-            
+
             <span className="text-sm text-gray-500 dark:text-gray-400 mx-2">
-              Page <span className="font-medium">{currentPage}</span> of{" "}
+              Page <span className="font-medium">{currentPage}</span> of{' '}
               <span className="font-medium">{totalPages || 1}</span>
             </span>
-            
+
             <Button
               variant="outline"
               size="icon"
@@ -277,5 +301,5 @@ export function DeviceDataTable<TData, TValue>({
         </div>
       </div>
     </div>
-  )
+  );
 }
