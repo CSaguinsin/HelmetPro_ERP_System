@@ -61,13 +61,13 @@ export const getApiDocs = () => {
                 schema: {
                   type: 'object',
                   properties: {
-                    username: { 
+                    username: {
                       type: 'string',
-                      description: 'Either username or email is required'
+                      description: 'Either username or email is required',
                     },
-                    email: { 
+                    email: {
                       type: 'string',
-                      description: 'Either username or email is required'
+                      description: 'Either username or email is required',
                     },
                     password: { type: 'string' },
                   },
@@ -116,8 +116,6 @@ export const getApiDocs = () => {
                           id: { type: 'integer' },
                           machine_id: { type: 'string' },
                           model: { type: 'string' },
-                          firmware_version: { type: 'string' },
-                          hardware_version: { type: 'string' },
                           last_connection: { type: 'string', format: 'date-time' },
                           status: { type: 'string' },
                           location: { type: 'string' },
@@ -231,6 +229,6 @@ export const getApiDocs = () => {
       },
     },
   };
-  
+
   return spec;
-}; 
+};

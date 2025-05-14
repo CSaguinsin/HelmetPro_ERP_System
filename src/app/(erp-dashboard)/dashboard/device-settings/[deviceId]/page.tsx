@@ -1,32 +1,32 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardContent, 
-  CardFooter 
-} from "@/components/ui/card";
-import { 
-  Form, 
-  FormControl, 
-  FormDescription, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { toast } from "react-hot-toast";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useAuth } from "@/lib/auth-context";
+'use client';
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import {
+  Card,
+  CardHeader,
+  CardTitle,
+  CardContent,
+  CardFooter,
+} from '@/components/ui/card';
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+import { toast } from 'react-hot-toast';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/lib/auth-context';
 
 // Define device settings type
 interface DeviceSettings {
@@ -58,23 +58,23 @@ const settingsFormSchema = z.object({
 
 // Payment methods options
 const paymentMethodOptions = [
-  { id: "coin_slot", label: "Coin Slot" },
-  { id: "bill_acceptor", label: "Bill Acceptor" },
-  { id: "card_only", label: "Card Only" },
+  { id: 'coin_slot', label: 'Coin Slot' },
+  { id: 'bill_acceptor', label: 'Bill Acceptor' },
+  { id: 'card_only', label: 'Card Only' },
 ];
 
 // Mock default settings - this will be replaced with actual API call later
 const defaultSettings: DeviceSettings = {
   required_payment_amount: 50,
-  payment_methods: ["coin_slot"],
-  machine_id: "",
+  payment_methods: ['coin_slot'],
+  machine_id: '',
   smoke_duration: 30,
   smoke_repeat_every: 5,
   uv_light_duration: 30,
   blower_drying_time: 60,
   blower_drying_repeat_every: 10,
   open_door_after: 120,
-  timezone: "Asia/Manila",
+  timezone: 'Asia/Manila',
 };
 
 export default function DeviceSettingsPage() {
@@ -85,7 +85,7 @@ export default function DeviceSettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("view");
+  const [activeTab, setActiveTab] = useState('view');
 
   // Initialize form
   const form = useForm<z.infer<typeof settingsFormSchema>>({
@@ -96,18 +96,22 @@ export default function DeviceSettingsPage() {
   // Load settings data
   useEffect(() => {
     if (!isAuthenticated && !authLoading) {
-      router.push("/");
+      router.push('/');
       return;
     }
-    
+
     setLoading(true);
     // Convert deviceId to string if it's an array or undefined
-    const deviceIdString = deviceId ? (Array.isArray(deviceId) ? deviceId[0] : String(deviceId)) : undefined;
-    
+    const deviceIdString = deviceId
+      ? Array.isArray(deviceId)
+        ? deviceId[0]
+        : String(deviceId)
+      : undefined;
+
     // Fetch device info to confirm it exists and belongs to this user
     const fetchDeviceInfo = async () => {
       if (!user?.user_client_id || !deviceIdString) {
-        setError("Invalid device or user information");
+        setError('Invalid device or user information');
         setLoading(false);
         return;
       }
@@ -115,28 +119,29 @@ export default function DeviceSettingsPage() {
       try {
         // First verify the device exists and belongs to the user
         const { data: deviceData, error: deviceError } = await supabase
-          .from("device_list")
-          .select("device_id, device_name, device_reg_id")
-          .eq("user_client_id", user.user_client_id)
-          .eq("device_id", deviceIdString)
+          .from('device_list')
+          .select('device_id, device_name, device_reg_id')
+          .eq('user_client_id', user.user_client_id)
+          .eq('device_id', deviceIdString)
           .single();
 
         if (deviceError || !deviceData) {
-          setError("Device not found or access denied");
+          setError('Device not found or access denied');
           setLoading(false);
           return;
         }
 
         // Now fetch the device settings from our new table
         const { data: settingsData, error: settingsError } = await supabase
-          .from("device_settings")
-          .select("*")
-          .eq("device_id", deviceIdString)
+          .from('device_settings')
+          .select('*')
+          .eq('device_id', deviceIdString)
           .single();
 
-        if (settingsError && settingsError.code !== 'PGRST116') { // PGRST116 is "not found"
-          console.error("Error fetching settings:", settingsError);
-          setError("Failed to load device settings");
+        if (settingsError && settingsError.code !== 'PGRST116') {
+          // PGRST116 is "not found"
+          console.error('Error fetching settings:', settingsError);
+          setError('Failed to load device settings');
           setLoading(false);
           return;
         }
@@ -157,21 +162,56 @@ export default function DeviceSettingsPage() {
             timezone: settingsData.timezone,
           };
         } else {
-          // No settings yet, use defaults
-          deviceSettings = {
-            ...defaultSettings,
+          // No settings yet, create default settings
+          const defaultSettings = {
+            device_id: deviceIdString,
+            required_payment_amount: 50.0,
+            payment_methods: ['coin_slot'],
             machine_id: deviceData.device_reg_id || `MACHINE-${deviceIdString}`,
+            smoke_duration: 30,
+            smoke_repeat_every: 5,
+            uv_light_duration: 30,
+            blower_drying_time: 60,
+            blower_drying_repeat_every: 10,
+            open_door_after: 120,
+            timezone: 'Asia/Manila',
+            updated_by: user?.erp_user_id,
+          };
+
+          // Insert default settings
+          const { error: insertError } = await supabase
+            .from('device_settings')
+            .insert([defaultSettings]);
+
+          if (insertError) {
+            console.error('Error creating default settings:', insertError);
+            setError('Failed to create default device settings');
+            setLoading(false);
+            return;
+          }
+
+          deviceSettings = {
+            required_payment_amount: defaultSettings.required_payment_amount,
+            payment_methods: defaultSettings.payment_methods,
+            machine_id: defaultSettings.machine_id,
+            smoke_duration: defaultSettings.smoke_duration,
+            smoke_repeat_every: defaultSettings.smoke_repeat_every,
+            uv_light_duration: defaultSettings.uv_light_duration,
+            blower_drying_time: defaultSettings.blower_drying_time,
+            blower_drying_repeat_every: defaultSettings.blower_drying_repeat_every,
+            open_door_after: defaultSettings.open_door_after,
+            timezone: defaultSettings.timezone,
           };
         }
-        
+
         setSettings(deviceSettings);
-        
+
         // Update form values
         form.reset(deviceSettings);
         setLoading(false);
       } catch (err) {
-        console.error("Error fetching device:", err);
-        setError("Failed to load device information");
+        console.error('Error fetching device:', err);
+        setError('Failed to load device information');
         setLoading(false);
       }
     };
@@ -184,25 +224,37 @@ export default function DeviceSettingsPage() {
     setSaving(true);
     try {
       // Convert deviceId to string if it's an array or undefined
-      const deviceIdString = deviceId ? (Array.isArray(deviceId) ? deviceId[0] : String(deviceId)) : undefined;
-      
+      const deviceIdString = deviceId
+        ? Array.isArray(deviceId)
+          ? deviceId[0]
+          : String(deviceId)
+        : undefined;
+
       if (!deviceIdString) {
-        throw new Error("Device ID is required");
+        throw new Error('Device ID is required');
       }
-      
+
       // Check if settings already exist for this device
       const { data: existingSettings } = await supabase
-        .from("device_settings")
-        .select("id")
-        .eq("device_id", deviceIdString)
+        .from('device_settings')
+        .select('id')
+        .eq('device_id', deviceIdString)
         .single();
-      
+
       let saveError;
-      
+
       if (existingSettings) {
+        // MUST UPDATE DEVICE NAME AS WELL
+        await supabase
+          .from('device_list')
+          .update({
+            device_reg_id: values.machine_id,
+          })
+          .eq('device_id', deviceIdString);
+
         // Update existing settings
         const { error } = await supabase
-          .from("device_settings")
+          .from('device_settings')
           .update({
             required_payment_amount: values.required_payment_amount,
             payment_methods: values.payment_methods,
@@ -214,45 +266,43 @@ export default function DeviceSettingsPage() {
             blower_drying_repeat_every: values.blower_drying_repeat_every,
             open_door_after: values.open_door_after,
             timezone: values.timezone,
-            updated_by: user?.erp_user_id
+            updated_by: user?.erp_user_id,
           })
-          .eq("device_id", deviceIdString);
-          
+          .eq('device_id', deviceIdString);
+
         saveError = error;
       } else {
         // Insert new settings
-        const { error } = await supabase
-          .from("device_settings")
-          .insert({
-            device_id: deviceIdString,
-            required_payment_amount: values.required_payment_amount,
-            payment_methods: values.payment_methods,
-            machine_id: values.machine_id,
-            smoke_duration: values.smoke_duration,
-            smoke_repeat_every: values.smoke_repeat_every,
-            uv_light_duration: values.uv_light_duration,
-            blower_drying_time: values.blower_drying_time,
-            blower_drying_repeat_every: values.blower_drying_repeat_every,
-            open_door_after: values.open_door_after,
-            timezone: values.timezone,
-            updated_by: user?.erp_user_id
-          });
-          
+        const { error } = await supabase.from('device_settings').insert({
+          device_id: deviceIdString,
+          required_payment_amount: values.required_payment_amount,
+          payment_methods: values.payment_methods,
+          machine_id: values.machine_id,
+          smoke_duration: values.smoke_duration,
+          smoke_repeat_every: values.smoke_repeat_every,
+          uv_light_duration: values.uv_light_duration,
+          blower_drying_time: values.blower_drying_time,
+          blower_drying_repeat_every: values.blower_drying_repeat_every,
+          open_door_after: values.open_door_after,
+          timezone: values.timezone,
+          updated_by: user?.erp_user_id,
+        });
+
         saveError = error;
       }
-      
+
       if (saveError) {
-        console.error("Failed to save settings:", saveError);
+        console.error('Failed to save settings:', saveError);
         throw new Error(saveError.message);
       }
-      
+
       // Update local state
       setSettings(values);
-      toast.success("Settings updated successfully");
-      setActiveTab("view");
+      toast.success('Settings updated successfully');
+      setActiveTab('view');
     } catch (err) {
-      console.error("Failed to update settings:", err);
-      toast.error(err instanceof Error ? err.message : "Failed to update settings");
+      console.error('Failed to update settings:', err);
+      toast.error(err instanceof Error ? err.message : 'Failed to update settings');
     } finally {
       setSaving(false);
     }
@@ -268,16 +318,18 @@ export default function DeviceSettingsPage() {
         <CardHeader>
           <CardTitle className="flex justify-between items-center">
             <span>Device Settings</span>
-            <Button variant="outline" onClick={() => router.back()}>Back</Button>
+            <Button variant="outline" onClick={() => router.back()}>
+              Back
+            </Button>
           </CardTitle>
         </CardHeader>
-        
+
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="mx-6">
             <TabsTrigger value="view">View Settings</TabsTrigger>
             <TabsTrigger value="edit">Edit Settings</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="view">
             <CardContent>
               <div className="space-y-4">
@@ -285,20 +337,19 @@ export default function DeviceSettingsPage() {
                   <div key={key} className="flex justify-between border-b pb-2">
                     <span className="font-medium">{key.replace(/_/g, ' ')}</span>
                     <span>
-                      {key === 'payment_methods' && Array.isArray(value) 
-                        ? value.map(method => method.replace(/_/g, ' ')).join(', ')
-                        : String(value)
-                      }
+                      {key === 'payment_methods' && Array.isArray(value)
+                        ? value.map((method) => method.replace(/_/g, ' ')).join(', ')
+                        : String(value)}
                     </span>
                   </div>
                 ))}
               </div>
             </CardContent>
             <CardFooter>
-              <Button onClick={() => setActiveTab("edit")}>Edit Settings</Button>
+              <Button onClick={() => setActiveTab('edit')}>Edit Settings</Button>
             </CardFooter>
           </TabsContent>
-          
+
           <TabsContent value="edit">
             <CardContent>
               <Form {...form}>
@@ -316,7 +367,7 @@ export default function DeviceSettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="payment_methods"
@@ -363,7 +414,7 @@ export default function DeviceSettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="machine_id"
@@ -377,7 +428,7 @@ export default function DeviceSettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -392,7 +443,7 @@ export default function DeviceSettingsPage() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="smoke_repeat_every"
@@ -407,7 +458,7 @@ export default function DeviceSettingsPage() {
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="uv_light_duration"
@@ -421,7 +472,7 @@ export default function DeviceSettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
@@ -436,7 +487,7 @@ export default function DeviceSettingsPage() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="blower_drying_repeat_every"
@@ -451,7 +502,7 @@ export default function DeviceSettingsPage() {
                       )}
                     />
                   </div>
-                  
+
                   <FormField
                     control={form.control}
                     name="open_door_after"
@@ -465,7 +516,7 @@ export default function DeviceSettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="timezone"
@@ -482,20 +533,17 @@ export default function DeviceSettingsPage() {
                       </FormItem>
                     )}
                   />
-                  
+
                   <div className="flex justify-end space-x-2">
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       type="button"
-                      onClick={() => setActiveTab("view")}
+                      onClick={() => setActiveTab('view')}
                     >
                       Cancel
                     </Button>
-                    <Button 
-                      type="submit" 
-                      disabled={saving}
-                    >
-                      {saving ? "Saving..." : "Save Settings"}
+                    <Button type="submit" disabled={saving}>
+                      {saving ? 'Saving...' : 'Save Settings'}
                     </Button>
                   </div>
                 </form>
@@ -506,4 +554,4 @@ export default function DeviceSettingsPage() {
       </Card>
     </div>
   );
-} 
+}

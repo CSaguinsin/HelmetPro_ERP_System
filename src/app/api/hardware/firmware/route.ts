@@ -1,5 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyHardwareAuth } from "@/lib/hardware-auth";
+import { NextRequest, NextResponse } from 'next/server';
+import { verifyHardwareAuth } from '@/lib/hardware-auth';
 import { createClient } from '@supabase/supabase-js';
 
 // Define firmware type for better type safety
@@ -13,18 +13,24 @@ interface FirmwareInfo {
 // Helper function to compare version strings
 function compareVersions(v1: string, v2: string): number {
   // Simple version comparison function
-  const v1Parts = v1.replace(/[^0-9.]/g, '').split('.').map(Number);
-  const v2Parts = v2.replace(/[^0-9.]/g, '').split('.').map(Number);
-  
+  const v1Parts = v1
+    .replace(/[^0-9.]/g, '')
+    .split('.')
+    .map(Number);
+  const v2Parts = v2
+    .replace(/[^0-9.]/g, '')
+    .split('.')
+    .map(Number);
+
   // Compare each part
   for (let i = 0; i < Math.max(v1Parts.length, v2Parts.length); i++) {
     const v1Part = v1Parts[i] || 0;
     const v2Part = v2Parts[i] || 0;
-    
+
     if (v1Part > v2Part) return 1;
     if (v1Part < v2Part) return -1;
   }
-  
+
   return 0; // Versions are equal
 }
 
@@ -67,43 +73,49 @@ function compareVersions(v1: string, v2: string): number {
  */
 export async function GET(req: NextRequest): Promise<Response> {
   // Verify auth token
-  const { authenticated, response, device } = await verifyHardwareAuth(req);
-  
-  if (!authenticated || !device) {
-    return response || NextResponse.json({ error: "Authentication failed" }, { status: 401 });
+  const result = await verifyHardwareAuth(req);
+
+  if (!result) {
+    return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
   }
 
   try {
     // Get current firmware version from query
     const url = new URL(req.url);
-    const currentVersion = url.searchParams.get("version") || device.firmware_version;
-    
+    const currentVersion =
+      url.searchParams.get('version') || result.device?.firmware_version_installed;
+
     if (!currentVersion) {
-      return NextResponse.json({ error: "Current firmware version is required" }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Current firmware version is required' },
+        { status: 400 }
+      );
     }
 
     // Use service role client for more reliable access
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE || '',
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '',
       {
         auth: {
           autoRefreshToken: false,
-          persistSession: false
-        }
+          persistSession: false,
+        },
       }
     );
 
     // Get the latest firmware for this device model
     const { data: firmwareVersions, error } = await supabaseAdmin
-      .from("firmware")
-      .select("*")
-      .eq("device_model", device.model)
-      .order("release_date", { ascending: false });
+      .from('firmware')
+      .select('*')
+      .order('id', { ascending: false });
 
     if (error) {
-      console.error("Error fetching firmware:", error);
-      return NextResponse.json({ error: "Failed to fetch firmware information" }, { status: 500 });
+      console.error('Error fetching firmware:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch firmware information' },
+        { status: 500 }
+      );
     }
 
     if (!firmwareVersions || firmwareVersions.length === 0) {
@@ -111,8 +123,8 @@ export async function GET(req: NextRequest): Promise<Response> {
     }
 
     // Find the latest version that is newer than the current version
-    const newerFirmware = firmwareVersions.find(fw => 
-      compareVersions(fw.version, currentVersion) > 0
+    const newerFirmware = firmwareVersions.find(
+      (fw) => compareVersions(fw.version, currentVersion) > 0
     );
 
     // Check if update is needed
@@ -122,24 +134,30 @@ export async function GET(req: NextRequest): Promise<Response> {
 
     // Generate signed URL for the firmware file
     const { data: urlData, error: urlError } = await supabaseAdmin.storage
-      .from("firmware")
+      .from('firmware')
       .createSignedUrl(newerFirmware.file_path, 60 * 60); // 1 hour expiry
 
     if (urlError || !urlData?.signedUrl) {
-      console.error("Error generating signed URL:", urlError);
-      return NextResponse.json({ error: "Failed to generate firmware download URL" }, { status: 500 });
+      console.error('Error generating signed URL:', urlError);
+      return NextResponse.json(
+        { error: 'Failed to generate firmware download URL' },
+        { status: 500 }
+      );
     }
 
     // Return firmware info
-    return NextResponse.json({
-      version: newerFirmware.version,
-      bin_url: urlData.signedUrl,
-      md5_hash: newerFirmware.md5_hash,
-      release_notes: newerFirmware.release_notes
-    } as FirmwareInfo, { status: 200 });
+    return NextResponse.json(
+      {
+        version: newerFirmware.version,
+        bin_url: urlData.signedUrl,
+        md5_hash: newerFirmware.md5_hash,
+        release_notes: newerFirmware.release_notes,
+      } as FirmwareInfo,
+      { status: 200 }
+    );
   } catch (err) {
-    console.error("Error fetching firmware:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error('Error fetching firmware:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -174,27 +192,27 @@ export async function GET(req: NextRequest): Promise<Response> {
 export async function POST(req: NextRequest): Promise<Response> {
   try {
     // Verify auth token
-    const { authenticated, response, device } = await verifyHardwareAuth(req);
-    
-    if (!authenticated || !device) {
-      return response || NextResponse.json({ error: "Authentication failed" }, { status: 401 });
+    const result = await verifyHardwareAuth(req);
+
+    if (!result) {
+      return NextResponse.json({ error: 'Authentication failed' }, { status: 401 });
     }
 
     // Get current version from request body
     const body = await req.json();
-    const currentVersion = body.version || device.firmware_version;
-    
+    const currentVersion = body.version || result.device?.firmware_version_installed;
+
     // Create a modified request with the version as a query parameter
     const url = new URL(req.url);
-    url.searchParams.set("version", currentVersion);
+    url.searchParams.set('version', currentVersion);
     const modifiedReq = new NextRequest(url, {
       headers: req.headers,
     });
-    
+
     // Reuse GET handler
     return GET(modifiedReq);
   } catch (err) {
-    console.error("Error in firmware POST endpoint:", err);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    console.error('Error in firmware POST endpoint:', err);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
-} 
+}
