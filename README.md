@@ -68,7 +68,7 @@ To set up and run the project locally:
    npm run dev
    ```
 
-5. Access the dashboard in your browser ats:
+5. Access the dashboard in your browser at:
    ```
    http://localhost:3000
    ```
